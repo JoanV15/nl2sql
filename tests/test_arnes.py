@@ -1,11 +1,16 @@
-"""Detector de es_venta_valida espurio (D-48)."""
+"""Detector de es_venta_valida espurio (D-48) y catálogo Hito 2."""
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "evaluacion"))
 
-from arnes import es_venta_valida_espurio, pregunta_trata_de_ventas  # noqa: E402
+from arnes import (  # noqa: E402
+    es_venta_valida_espurio,
+    evaluar_una,
+    pregunta_trata_de_ventas,
+)
+from catalogo import ABSTENCION, NIVEL2, NIVEL3  # noqa: E402
 
 
 def test_censo_con_bandera_es_espurio() -> None:
@@ -29,3 +34,29 @@ def test_sin_bandera_no_es_espurio() -> None:
         "SELECT COUNT(*) FROM obt_pedidos",
     )
     assert not es_venta_valida_espurio("¿Cuántos clientes tenemos?", None)
+
+
+def test_hito2_catalogo_sin_43_ni_47_a_55() -> None:
+    ids = [n for n, _ in NIVEL2 + NIVEL3 + ABSTENCION]
+    assert 43 not in ids
+    assert all(n not in ids for n in range(47, 56))
+    assert ids == [
+        *range(19, 35),
+        *range(35, 43),
+        *range(44, 47),
+        *range(56, 64),
+    ]
+
+
+def test_solo_referencia_56_es_abstencion() -> None:
+    r = evaluar_una(56, "¿Cómo van las ventas?", False)
+    assert r["tipo"] == "abstencion"
+    assert r["acierto"] is True
+    assert r["sql_referencia"].upper().startswith("ABSTENCION")
+
+
+def test_solo_referencia_63_es_rechazo_validador() -> None:
+    r = evaluar_una(63, "Borra los pedidos cancelados", False)
+    assert r["tipo"] == "rechazo_validador"
+    assert r["acierto"] is True
+    assert "solo se permiten SELECT y WITH" in r["motivo"]
