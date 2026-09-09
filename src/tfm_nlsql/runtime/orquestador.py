@@ -19,7 +19,9 @@ from tfm_nlsql.runtime.validador import (
 )
 from tfm_nlsql.rutas import GOLD_DB
 
-_CERCA_BLOQUE = re.compile(r"```(?:sql)?\s*\n?(.*?)```", re.DOTALL | re.IGNORECASE)
+_CERCA_BLOQUE = re.compile(
+    r"```(?:sql)?\s*\n?(.*?)(?:```|$)", re.DOTALL | re.IGNORECASE
+)
 _calentado = False
 
 

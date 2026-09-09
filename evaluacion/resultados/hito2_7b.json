@@ -193,13 +193,13 @@
       "acierto": false,
       "sql_generado": null,
       "abstencion": null,
-      "error": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0m\nWITH ventas_2017 AS (\n  SELECT macro_categoria,\n         SUM(importe_articulos) AS total_2017\n  FRO",
+      "error": "SQL no analizable: Expecting ). Line 12, Col: 53.\n  _articulos) AS total_2018\n  FROM obt_lineas_pedido\n  WHERE es_venta_valida AND YEAR(fecha_compra) = \u001b[4m2018\u001b[0m",
       "es_venta_valida_espurio": false,
-      "prompt_n": 26,
-      "prompt_ms": 1711.343,
+      "prompt_n": 27,
+      "prompt_ms": 1686.69,
       "predicted_n": 120,
-      "predicted_ms": 25031.373,
-      "motivo": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0m\nWITH ventas_2017 AS (\n  SELECT macro_categoria,\n         SUM(importe_articulos) AS total_2017\n  FRO"
+      "predicted_ms": 25621.855,
+      "motivo": "SQL no analizable: Expecting ). Line 12, Col: 53.\n  _articulos) AS total_2018\n  FROM obt_lineas_pedido\n  WHERE es_venta_valida AND YEAR(fecha_compra) = \u001b[4m2018\u001b[0m"
     },
     {
       "n": 28,
@@ -316,15 +316,17 @@
       "pregunta": "Dame la facturación y el ticket medio mensuales del último año, suavizados con una media de tres meses",
       "sql_referencia": "SELECT mes, facturacion, ticket_medio, AVG(facturacion) OVER (ORDER BY mes ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS facturacion_mm3, AVG(ticket_medio) OVER (ORDER BY mes ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS ticket_mm3 FROM (SELECT DATE_TRUNC('MONTH', fecha_compra) AS mes, SUM(importe_articulos) AS facturacion, SUM(importe_articulos) / COUNT(*) AS ticket_medio FROM obt_pedidos WHERE es_venta_valida AND fecha_compra >= CAST('2018-10-17' AS DATE) - INTERVAL '1' YEAR AND fecha_compra < CAST('2018-10-18' AS DATE) GROUP BY mes) ORDER BY mes LIMIT 1000",
       "acierto": false,
-      "sql_generado": null,
+      "sql_generado": "WITH facturaciones AS (SELECT DATE_TRUNC('MONTH', fecha_compra) AS mes, SUM(importe_articulos) AS facturacion FROM obt_pedidos WHERE es_venta_valida AND YEAR(fecha_compra) BETWEEN YEAR(CURRENT_DATE) - 1 AND YEAR(CURRENT_DATE) GROUP BY mes) SELECT mes, facturacion, AVG(facturacion) OVER (ORDER BY mes ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS ticket_medio_mensual FROM facturaciones ORDER BY mes LIMIT 1000",
       "abstencion": null,
-      "error": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH facturaciones AS (\n  SELECT DATE_TRUNC('month', fecha_compra) AS mes,\n         SUM(importe_",
+      "error": null,
       "es_venta_valida_espurio": false,
       "prompt_n": 30,
-      "prompt_ms": 2206.922,
+      "prompt_ms": 2119.948,
       "predicted_n": 120,
-      "predicted_ms": 25184.884,
-      "motivo": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH facturaciones AS (\n  SELECT DATE_TRUNC('month', fecha_compra) AS mes,\n         SUM(importe_"
+      "predicted_ms": 24919.052,
+      "motivo": "conjuntos distintos",
+      "n_generado": 0,
+      "n_referencia": 12
     },
     {
       "n": 36,
@@ -333,13 +335,13 @@
       "acierto": false,
       "sql_generado": null,
       "abstencion": null,
-      "error": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH facturacion_vendedores AS (\n  SELECT id_vendedor,\n         SUM(importe_articulos) AS factur",
+      "error": "SQL no analizable: Required keyword: 'expression' missing for <class 'sqlglot.expressions.core.EQ'>. Line 12, Col: 13.\n  on,\n       RANK() OVER (ORDER BY facturacion DESC) AS grupo\nFROM facturacion_vendedores\nWHERE grupo \u001b[4m=\u001b[0m",
       "es_venta_valida_espurio": false,
       "prompt_n": 36,
-      "prompt_ms": 2363.043,
+      "prompt_ms": 2221.316,
       "predicted_n": 120,
-      "predicted_ms": 24952.959,
-      "motivo": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH facturacion_vendedores AS (\n  SELECT id_vendedor,\n         SUM(importe_articulos) AS factur"
+      "predicted_ms": 24863.446,
+      "motivo": "SQL no analizable: Required keyword: 'expression' missing for <class 'sqlglot.expressions.core.EQ'>. Line 12, Col: 13.\n  on,\n       RANK() OVER (ORDER BY facturacion DESC) AS grupo\nFROM facturacion_vendedores\nWHERE grupo \u001b[4m=\u001b[0m"
     },
     {
       "n": 37,
@@ -399,13 +401,13 @@
       "acierto": false,
       "sql_generado": null,
       "abstencion": null,
-      "error": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH clientes_recurrentes AS (\n  SELECT id_cliente_persona,\n         DATE_ADD('month', 3, fecha_",
+      "error": "SQL no analizable: Expecting ). Line 10, Col: 12.\n  s,\n         SUM(CASE WHEN meses_desde_primera_compra = 6 THEN 1 ELSE 0 END) AS seis_meses,\n         \u001b[4mSUM\u001b[0m",
       "es_venta_valida_espurio": false,
-      "prompt_n": 30,
-      "prompt_ms": 2296.769,
+      "prompt_n": 31,
+      "prompt_ms": 2155.604,
       "predicted_n": 120,
-      "predicted_ms": 25553.892,
-      "motivo": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH clientes_recurrentes AS (\n  SELECT id_cliente_persona,\n         DATE_ADD('month', 3, fecha_"
+      "predicted_ms": 25263.651,
+      "motivo": "SQL no analizable: Expecting ). Line 10, Col: 12.\n  s,\n         SUM(CASE WHEN meses_desde_primera_compra = 6 THEN 1 ELSE 0 END) AS seis_meses,\n         \u001b[4mSUM\u001b[0m"
     },
     {
       "n": 41,
@@ -414,13 +416,13 @@
       "acierto": false,
       "sql_generado": null,
       "abstencion": null,
-      "error": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH clientes_tarde AS (\n  SELECT id_cliente_persona\n  FROM obt_pedidos\n  WHERE es_venta_valida ",
+      "error": "SQL no analizable: Expecting ). Line 14, Col: 58.\n  tarde)\n  GROUP BY id_cliente_persona\n),\npedidos_total AS (\n  SELECT id_cliente_persona, COUNT(*) AS \u001b[4mnum_pedidos_total\u001b[0m",
       "es_venta_valida_espurio": false,
       "prompt_n": 19,
-      "prompt_ms": 1324.274,
+      "prompt_ms": 1371.628,
       "predicted_n": 120,
-      "predicted_ms": 24967.89,
-      "motivo": "SQL no analizable: Invalid expression / Unexpected token. Line 1, Col: 3.\n  ``\u001b[4m`\u001b[0msql\nWITH clientes_tarde AS (\n  SELECT id_cliente_persona\n  FROM obt_pedidos\n  WHERE es_venta_valida "
+      "predicted_ms": 24835.008,
+      "motivo": "SQL no analizable: Expecting ). Line 14, Col: 58.\n  tarde)\n  GROUP BY id_cliente_persona\n),\npedidos_total AS (\n  SELECT id_cliente_persona, COUNT(*) AS \u001b[4mnum_pedidos_total\u001b[0m"
     },
     {
       "n": 42,

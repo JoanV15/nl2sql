@@ -36,3 +36,13 @@ def test_corta_en_la_primera_sentencia_aunque_llegue_ruido() -> None:
     assert abs_ is None
     assert sql == "SELECT COUNT(id_pedido) AS total_pedidos\nFROM obt_pedidos"
     assert "clientes" not in sql
+
+
+def test_cerca_sin_cierre_no_arranca_por_fence() -> None:
+    sql, abs_ = extraer_salida(
+        "```sql\nWITH x AS (SELECT 1 FROM obt_pedidos)\nSELECT * FROM x"
+    )
+    assert abs_ is None
+    assert sql is not None
+    assert not sql.startswith("```")
+    assert sql.startswith("WITH")
