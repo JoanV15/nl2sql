@@ -1456,6 +1456,52 @@ del 3B ya está cuantificado.
 
 ---
 
+### D-54 · Alcance del Hito 2: qué preguntas tienen referencia ahora
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** El Hito 2 exige SQL de referencia para Niveles 2 y 3 y para
+el bloque de abstención. Gold del Hito 1 materializa tres OBT. Cuatro
+preguntas del catálogo piden fuentes del Hito 4; dos están descartadas
+por D-16; `importe_articulos_eur`, `id_transportista`, `tipo_incidencia` y
+las columnas de captación siguen a NULL (D-43).
+
+**Decisión.** El conjunto de evaluación del Hito 2, hasta que existan las
+fuentes del Hito 4, es el grupo (a) más 56–63. No se escribe referencia
+para (b) ni para las descartadas. La 43 no recibe SQL: el contrato no
+define «cancelación antes de facturar».
+
+**(a) Respondibles con las tres OBT.** 19–42 y 44–46.
+
+**(b) Hito 4.** 47 y 48 (eventos logísticos), 50 y 51 (`obt_embudo_web`),
+53 y 54 (Marketing Funnel; columnas a NULL), 55 (tipo de cambio;
+`importe_articulos_eur` a NULL).
+
+**(c) Sin SQL ahora.** 49 y 52 (D-16). 43 (definición ausente).
+
+**56–63.** 56–59 se abstienen. 60 y 61 son SELECT con una línea de
+supuesto. 62 resuelve el grano en `obt_pedidos`. 63 es un `DELETE` que
+rechaza el validador, no el modelo.
+
+**Definiciones que no están en el contrato y se anotan, no se cierran.**
+24: São Paulo como UF `SP`, no la ciudad. 33 y 37: «informática» como
+`macro_categoria = 'Electrónica e Informática'` (el bloque 4 ejemplifica
+«electrónica», no «informática»). 27: crecimiento relativo, no delta.
+40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
+observación). 61: semana natural de DuckDB (lunes 2018-10-15); esa
+semana no tiene venta válida, el resultado es 0. 62: columna
+`importe_total`, no GMV. 30, 42 y 46 superan las 1.000 filas del
+validador: el arnés verá un recorte, no el censo.
+
+**Justificación.** Escribir referencia contra columnas NULL o contra
+`obt_embudo_web` haría pasar el `EXPLAIN` y mentiría el resultado (D-43).
+Inventar la 43 para tener cobertura inflaría el Nivel 3.
+
+**Alternativa descartada.** Incluir 47–55 con SQL que lee NULL y devuelve
+vacío. El vacío no es abstención y contaminaría la precisión.
+
+---
+
 ## 5. Conclusiones técnicas
 
 Hallazgos derivados del diseño, con valor para el capítulo de resultados.
