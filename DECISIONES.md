@@ -1484,7 +1484,7 @@ supuesto. 62 resuelve el grano en `obt_pedidos`. 63 es un `DELETE` que
 rechaza el validador, no el modelo.
 
 **Definiciones que no están en el contrato y se anotan, no se cierran.**
-24: São Paulo como UF `SP`, no la ciudad. 33 y 37: cerradas en D-55. 27: crecimiento relativo, no delta. 40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
+24: cerrada en D-56. 33 y 37: cerradas en D-55. 27: crecimiento relativo, no delta. 40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
 observación). 61: semana natural de DuckDB (lunes 2018-10-15); esa
 semana no tiene venta válida, el resultado es 0. 62: columna
 `importe_total`, no GMV. 30, 42 y 46 superan las 1.000 filas del
@@ -1520,6 +1520,31 @@ consolas. Dejar la macro haría fallar D-50 a un modelo que sigue el contrato.
 
 **Alternativa descartada.** Conservar la macro y declararla en un comentario.
 Colapsaría 33 y 60 al mismo mapeo y mediría solo la ventana temporal.
+
+---
+
+### D-56 · São Paulo en la pregunta 24 es la UF, no la ciudad
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** La pregunta 24 pide comparar las ventas de São Paulo con las
+del resto del país. El SQL de 75875af ya filtra `estado_cliente = 'SP'`.
+En Gold, venta válida, la UF suma 5,16 M frente a 8,33 M del resto; la
+ciudad `sao paulo` suma 1,90 M frente a 11,60 M. La pregunta 13 («qué
+ciudad nos genera más ingresos») ya responde por `ciudad_cliente`.
+
+**Decisión.** São Paulo en la 24 es la UF `SP`. `24.sql` no se toca. No se
+toca el prefijo del contrato.
+
+**Justificación.** «El resto del país» parte el territorio en dos, y en
+Brasil esa partición es el estado de São Paulo frente al resto de las UF,
+no una ciudad frente a todo el país. La 13 ya cubre el grano ciudad; usar
+ciudad otra vez en la 24 duplicaría el ítem y cambiaría el resultado
+(1,90 M / 11,60 M en lugar de 5,16 M / 8,33 M).
+
+**Alternativa descartada.** Reescribir la 24 a `ciudad_cliente`. Haría de
+la 13 y la 24 la misma pregunta con distinto recorte geográfico, y Joan
+cerró UF.
 
 ---
 
