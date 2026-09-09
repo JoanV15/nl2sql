@@ -1487,8 +1487,7 @@ rechaza el validador, no el modelo.
 24: cerrada en D-56. 33 y 37: cerradas en D-55. 27: crecimiento relativo, no delta. 40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
 observación). 61: semana natural de DuckDB (lunes 2018-10-15); esa
 semana no tiene venta válida, el resultado es 0. 62: cerrada en D-57.
-30, 42 y 46 superan las 1.000 filas del
-validador: el arnés verá un recorte, no el censo.
+30, 42 y 46: cerradas en D-58.
 
 **Justificación.** Escribir referencia contra columnas NULL o contra
 `obt_embudo_web` haría pasar el `EXPLAIN` y mentiría el resultado (D-43).
@@ -1568,6 +1567,29 @@ sistema elija esa columna y ese grano, no que aplique el sinónimo de D-12.
 
 **Alternativa descartada.** Sustituir por `SUM(importe_articulos)`. Haría
 de la 62 otra pregunta de facturación canónica y anularía el enunciado.
+
+---
+
+### D-58 · 30, 42 y 46 se evalúan con el LIMIT 1000 inyectado
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** Las preguntas 30, 42 y 46 devuelven 1.447, 2.967 y 2.354
+filas. `inyectar_limite` recorta referencia y generado a 1.000. El
+`ORDER BY` de los tres SQL ya es estable (`id_vendedor` como desempate).
+
+**Decisión.** Se evalúan con el recorte que inyecta el validador. D-50 no
+se relaja. El SQL de referencia no se toca. No se toca el prefijo del
+contrato.
+
+**Justificación.** El límite es política de ejecución (D-19), no métrica.
+Comparar el censo completo contra un generado recortado, o ignorar el
+`LIMIT` inyectado, es la alternativa que D-50 ya descartó. Con orden
+determinista, referencia y modelo ven el mismo prefijo de 1.000 filas.
+
+**Alternativa descartada.** Subir el límite o relajar D-50 a «los N
+primeros coinciden». Cambiaría la política o la métrica a posteriori, y
+haría incomparable cualquier pasada futura.
 
 ---
 
