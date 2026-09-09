@@ -1484,10 +1484,7 @@ supuesto. 62 resuelve el grano en `obt_pedidos`. 63 es un `DELETE` que
 rechaza el validador, no el modelo.
 
 **Definiciones que no están en el contrato y se anotan, no se cierran.**
-24: São Paulo como UF `SP`, no la ciudad. 33 y 37: «informática» como
-`macro_categoria = 'Electrónica e Informática'` (el bloque 4 ejemplifica
-«electrónica», no «informática»). 27: crecimiento relativo, no delta.
-40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
+24: São Paulo como UF `SP`, no la ciudad. 33 y 37: cerradas en D-55. 27: crecimiento relativo, no delta. 40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
 observación). 61: semana natural de DuckDB (lunes 2018-10-15); esa
 semana no tiene venta válida, el resultado es 0. 62: columna
 `importe_total`, no GMV. 30, 42 y 46 superan las 1.000 filas del
@@ -1499,6 +1496,30 @@ Inventar la 43 para tener cobertura inflaría el Nivel 3.
 
 **Alternativa descartada.** Incluir 47–55 con SQL que lee NULL y devuelve
 vacío. El vacío no es abstención y contaminaría la precisión.
+
+---
+
+### D-55 · «Informática» no es la macro Electrónica e Informática
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** Las preguntas 33 y 37 piden informática. El SQL de 75875af
+filtró `macro_categoria = 'Electrónica e Informática'`, el conjunto que el
+bloque 4 reserva a «electrónica» (pregunta 60). En Gold, últimos 6 meses,
+la macro suma 475.821 €; `informatica_acessorios` + `pcs` + `pc_gamer`
+suman 246.874 €.
+
+**Decisión.** Informática = `categoria_producto IN ('informatica_acessorios',
+'pcs', 'pc_gamer')`. La macro queda para la pregunta 60. Se reescriben
+`33.sql` y `37.sql`. No se toca el prefijo del contrato.
+
+**Justificación.** El bloque 4 resuelve con macro un término castellano que
+cubre varias categorías de origen; el ejemplo canónico es «electrónica».
+Informática es un subconjunto (accesorios y PCs), no telefonía, audio ni
+consolas. Dejar la macro haría fallar D-50 a un modelo que sigue el contrato.
+
+**Alternativa descartada.** Conservar la macro y declararla en un comentario.
+Colapsaría 33 y 60 al mismo mapeo y mediría solo la ventana temporal.
 
 ---
 
