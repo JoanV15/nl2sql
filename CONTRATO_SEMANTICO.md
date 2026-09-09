@@ -14,7 +14,9 @@ documento es comentario para la memoria y **no** viaja al modelo.
 
 Tres restricciones gobiernan su diseño:
 
-1. **Presupuesto de 2.500 tokens**, medido en P-07. Reparto en D-37.
+1. **Ajuste a la ventana de 4.096 fichas** (D-37, corrección D-46). El
+   recuento real está en la tabla de control. Las 2.500 de P-07 eran el
+   tamaño de un prefijo sintético, no un techo.
 2. **Invariabilidad byte a byte.** La caché de prefijo solo se reutiliza si el
    prefijo no cambia entre consultas (D-33). Toda porción variable —la
    pregunta, la marca de tiempo, el historial— va después del prefijo, nunca
@@ -451,30 +453,41 @@ del modelo a responder siempre algo.
 
 ## Control de presupuesto
 
-| Bloque | Asignado (D-37) | Real | Estado |
+| Bloque | Estimado a ojo | Real (`/tokenize`) | Estado |
 |---|---|---|---|
-| 1 · Rol y formato | ~120 | ~150 | **Completo** |
-| 2 · Esquema | ~1.500 | ~1.420 | **Completo** (32 + 18 + 15 + 9 = 74 columnas) |
-| 3 · Métricas y sinónimos | ~200 | ~150 | **Completo** |
-| 4 · Reglas de negocio | ~120 | ~250 | **Completo** (excede lo asignado, ver nota) |
-| 5 · Ausencias declaradas | — | ~150 | **Completo** |
-| 6 · Abstención | ~60 | ~130 | **Completo** |
-| 7 · Ejemplos | ~400 | ~300 | **Completo** |
-| **Total** | **~2.400** | **~2.450** | Límite medido: 2.500 (P-07) |
+| 1 · Rol y formato | ~150 | 193 | **Completo** |
+| 2 · Esquema | ~1.420 | 1.592 | **Completo** (32 + 18 + 15 + 9 = 74 columnas) |
+| 3 · Métricas y sinónimos | ~150 | 161 | **Completo** |
+| 4 · Reglas de negocio | ~250 | 386 | **Completo** |
+| 5 · Ausencias declaradas | ~150 | 185 | **Completo** |
+| 6 · Abstención | ~130 | 160 | **Completo** |
+| 7 · Ejemplos | ~300 | 213 | **Completo** |
+| **Total** | **~2.450** | **2.890** | Ventana 4.096. Ocupación ~3.040. **Cabe.** |
 
-**Desviaciones respecto al reparto de D-37.** El esquema cerró en 1.420 frente
-a los 1.500 previstos, y ese margen absorbió los excesos de los bloques 4 y 6 y
-el bloque 5, que no estaba presupuestado. Los ejemplos costaron 300 en lugar de
-400 al mantenerse en tres. El total queda en unas 2.450 fichas, por debajo del
-límite medido pero con poco margen.
+**Verificación.** Recuento del 2026-09-07 con el endpoint `/tokenize` de
+`llama-server` (Qwen2.5-Coder-3B-Instruct Q4_K_M), concatenando los bloques
+`[PREFIJO]` en el orden del documento. El prefijo que consume el runtime
+mide **2.890 fichas**. La suma de los siete bloques, tokenizados por
+separado, coincide con ese total.
 
-**Verificación pendiente.** Las cifras de esta tabla son estimaciones. El
-recuento real debe obtenerse con el tokenizador del modelo, no a ojo,
-concatenando los bloques marcados `[PREFIJO]` y enviándolos al endpoint
-`/tokenize` de `llama-server`. Si el resultado supera 2.500, el orden de
-recorte lo fija D-37: primero los ejemplos.
+Las estimaciones previas de esta tabla (~2.450) eran a ojo y quedaron un
+15 % por debajo del recuento real. El «límite medido» de 2.500 que figuraba
+aquí era el tamaño del prefijo sintético de P-07, no un techo: aquella
+prueba comparaba prefill en frío contra caché caliente, no dimensionaba el
+contrato.
 
-**Si hay que crecer.** La ventana de contexto está en 4.096 y el prefijo
-consume unas 2.450, más la pregunta y hasta 120 fichas de respuesta. Queda
-holgura, pero ampliar el contrato por encima de las 3.000 obligaría a subir la
-ventana, con su coste en KV cache y en memoria (ver anexo de P-07).
+**Techo.** Lo fija la ventana de contexto, no P-07 (D-46):
+
+2.890 (prefijo) + ~30 (pregunta) + 120 (respuesta) ≈ 3.040 de 4.096.
+
+El coste del exceso respecto al sintético de P-07 es del orden de 2,5 s más
+de prefill en frío a ~145 fichas/s, y D-34 lo absorbe en el arranque. Con la
+caché caliente el tamaño del prefijo es irrelevante: solo se procesa el
+delta.
+
+**Recorte.** El orden de D-37 (primero los ejemplos; esquema y reglas no se
+tocan) aplica solo si se rebasa la ventana. No se ha recortado nada.
+
+**Si hay que crecer.** A partir de ~3.200 fichas de prefijo hay que decidir
+entre recortar o subir la ventana a 6.144, con su coste en KV cache y en
+memoria (ver anexo de P-07).

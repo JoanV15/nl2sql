@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: obt_pedidos
+    description: Grano pedido (id_pedido).
+    columns:
+      - name: id_pedido
+        tests:
+          - unique
+          - not_null
+  - name: obt_lineas_pedido
+    description: Grano línea (id_pedido + num_linea).
+    columns:
+      - name: id_pedido
+        tests:
+          - not_null
+      - name: num_linea
+        tests:
+          - not_null
+  - name: obt_vendedores
+    description: Grano vendedor, censo completo (D-44).
+    columns:
+      - name: id_vendedor
+        tests:
+          - unique
+          - not_null

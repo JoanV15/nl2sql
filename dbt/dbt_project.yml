@@ -1,0 +1,24 @@
+name: tfm_nlsql
+version: "1.0.0"
+profile: tfm_nlsql
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+seeds:
+  tfm_nlsql:
+    seed_macro_categorias:
+      +column_types:
+        product_category_name: varchar
+        macro_categoria: varchar
+
+models:
+  tfm_nlsql:
+    staging:
+      +materialized: ephemeral
+    gold:
+      +materialized: table

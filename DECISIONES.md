@@ -473,6 +473,9 @@ memoria.
 a reducir es el de ejemplos resueltos, que es el más caro por unidad. El
 esquema y las reglas de negocio no se recortan.
 
+**Corrección.** El 2.500 no era un techo de fichas. El criterio de dimensionado
+queda en D-46.
+
 ---
 
 ### D-38 · Definiciones canónicas surgidas del diseño de `obt_pedidos`
@@ -1034,6 +1037,179 @@ la del código.
 
 ---
 
+### D-43 · Alcance Gold del Hito 1: tres OBT, no una
+
+**Fecha:** 2026-09-07 · **Estado:** Firme
+
+**Contexto.** D-23 manda una rebanada vertical con la tecnología más simple
+posible. El primer recorte contemplaba materializar solo `obt_pedidos`. Cuatro
+preguntas del Nivel 1 —la 4, la 5, la 12 y la 18— no son respondibles desde
+esa tabla: el contrato no tiene vendedor, categoría ni producto a grano
+pedido, y D-11 sitúa esas columnas en las otras OBT. Recortar el contrato
+rompería D-33. Inventar columnas en `obt_pedidos` contradiría D-11 y la nota
+que descarta `num_vendedores`.
+
+**Decisión.** El Hito 1 materializa `obt_pedidos`, `obt_lineas_pedido` y
+`obt_vendedores`. `obt_embudo_web` queda fuera: ninguna pregunta del Nivel 1
+la exige y su fuente es clickstream simulado, anillo posterior.
+
+Las columnas que dependen de fuentes aún no implementadas se materializan
+como `NULL` y **permanecen en el esquema**:
+
+| Tabla | Columnas a NULL | Fuente pendiente |
+|---|---|---|
+| `obt_pedidos` | `importe_articulos_eur`, `id_transportista`, `tipo_incidencia` | tipos de cambio; eventos logísticos |
+| `obt_vendedores` | `fecha_captacion`, `canal_captacion`, `segmento_negocio` | Marketing Funnel by Olist |
+
+`dias_hasta_primera_venta` se deriva de `fecha_captacion`; al ser esta `NULL`,
+también lo es. No se inventa un sustituto.
+
+**Validador.** El contrato (prefijo) sigue declarando las cuatro tablas y no
+se toca. La lista blanca del validador AST contiene solo las tres tablas
+existentes: una consulta contra `obt_embudo_web` se rechaza con motivo
+explícito y no llega a DuckDB. Es deuda del hito: cuando exista la cuarta
+tabla, entra en la lista blanca. El prefijo y la lista blanca no coinciden
+hasta entonces.
+
+**Valores de `macro_categoria`.** Los doce nombres persistidos coinciden con
+el bloque 4 del contrato —sin comas internas—, no con la prosa de la tabla de
+D-30. El modelo filtra por lo que ve en el prefijo; un valor con coma
+devolvería vacío sin error.
+
+**Justificación.** El criterio de hecho del hito es responder las 18 preguntas
+del Nivel 1. Tres tablas son el mínimo que lo hace posible sin falsear el
+contrato ni el censo de vendedores (D-44).
+
+**Alternativas descartadas.** Evaluar solo las 14 respondibles desde
+`obt_pedidos`: dejaría el suelo de funcionamiento incompleto a sabiendas.
+Tablas vacías con el esquema del contrato: el `EXPLAIN` pasaría y el
+resultado mentiría. Recortar el prefijo: invalida la caché y contradice D-33.
+
+---
+
+### D-44 · Censo de vendedores: contar personas, no vendedores con ventas
+
+**Fecha:** 2026-09-07 · **Estado:** Firme
+
+**Contexto.** La pregunta 4 —«¿Cuántos vendedores distintos tenemos?»— admite
+dos lecturas: el censo de `olist_sellers_dataset` o el recuento distinto de
+`id_vendedor` en las líneas de pedido. La segunda pierde a quien se dio de
+alta y no llegó a vender, y devolvería un número incorrecto sin fallar.
+
+**Decisión.** «Vendedores distintos» significa el censo completo.
+`obt_vendedores` se construye desde `olist_sellers_dataset` y los agregados
+de actividad se unen por la izquierda. No se deriva de `obt_lineas_pedido`.
+La pregunta 4 se responde con `COUNT(*)` sobre `obt_vendedores`.
+
+**Justificación.** Mismo criterio que D-12 y C-05: ante una métrica ambigua,
+fijar la definición por la pregunta de negocio y publicarla. Un director
+comercial que pregunta cuántos vendedores *tenemos* pregunta por el censo, no
+por el subconjunto con facturación.
+
+**Alternativa descartada.** Derivar la tabla de las líneas de pedido: más
+simple de construir y sistemáticamente corta.
+
+---
+
+### D-45 · Agregación de pagos a grano pedido
+
+**Fecha:** 2026-09-07 · **Estado:** Firme
+
+**Contexto.** D-11 obliga a agregar los pagos a nivel de pedido antes de
+unirlos a `obt_pedidos`. Olist admite varios registros de pago por pedido
+(tarjeta más vale, pagos fraccionados). Sin regla, `tipo_pago_principal` y
+`num_plazos` dependen del orden de llegada y a veces mienten.
+
+**Decisión.**
+
+- `tipo_pago_principal` es el `payment_type` del registro con mayor
+  `payment_value`. Empate: el de menor `payment_sequential`.
+- `num_plazos` es el `payment_installments` de ese mismo registro.
+- `importe_pagado` es la suma de `payment_value` de todos los registros del
+  pedido.
+- `fue_pagado_a_plazos` es `num_plazos > 1`. Si no hay pagos, las cuatro
+  quedan a `NULL`.
+
+**Justificación.** El «método de pago más usado» (pregunta 10) y «pagado a
+plazos» (pregunta 17) necesitan un único valor por pedido. Elegir el de mayor
+importe identifica el medio con el que se liquidó la mayor parte de la
+compra; el sequential desempatador es determinista y coincide con el orden
+en que Olist registró los medios.
+
+**Alternativa descartada.** `num_plazos = MAX(payment_installments)` de todos
+los pagos del pedido: atribuiría plazos al pedido aunque el pago principal
+fuese un boleto a un único vencimiento.
+
+---
+
+### D-46 · Corrección al dimensionado de D-37: la ventana, no las 2.500 fichas
+
+**Fecha:** 2026-09-07 · **Estado:** Firme
+
+**Contexto.** D-37 tomó las 2.500 fichas de P-07 como techo del contrato. Esa
+cifra era el tamaño del prefijo sintético con el que se comparó el prefill
+en frío contra la caché caliente, no un límite medido. El recuento real del
+prefijo, con el tokenizador del modelo, es 2.890. La tabla de control de
+`CONTRATO_SEMANTICO.md` lo había etiquetado como «límite medido», redacción
+engañosa.
+
+**Decisión.** El criterio de dimensionado del contrato es el ajuste a la
+ventana de contexto (4.096), no un número fijo de fichas.
+
+2.890 (prefijo) + ~30 (pregunta) + 120 (respuesta) ≈ 3.040 de 4.096. Cabe.
+
+El orden de recorte de D-37 —primero los ejemplos resueltos; el esquema y
+las reglas de negocio no se tocan— aplica solo si se rebasa la ventana. El
+umbral de alerta son ~3.200 fichas de prefijo: a partir de ahí hay que
+decidir entre recortar o subir la ventana a 6.144, con su coste en KV cache.
+
+**Justificación.** El coste del prefill extra en frío, del orden de 2,5 s a
+~145 fichas/s, lo absorbe el precalentamiento de D-34. Con la caché caliente
+el tamaño del prefijo es irrelevante: solo se procesa el delta.
+
+**Alternativa descartada.** Recortar los ejemplos para volver a las 2.500
+fichas: resolvería un techo que no existe y degradaría el few-shot.
+
+---
+
+### D-47 · Plantilla ChatML en el borde de generación
+
+**Fecha:** 2026-09-08 · **Estado:** Firme
+
+**Contexto.** El Hito 1 evaluó el Nivel 1 con precisión 0. El SQL generado era
+en varios casos correcto, pero el modelo no paraba: continuaba el few-shot del
+contrato, emitía vallas y una segunda pregunta. Una llamada suelta a
+`llama-server` lo reprodujo. El prompt se enviaba como completación cruda
+a Qwen2.5-Coder-Instruct; el servidor estaba en `chat_format: Content-only`;
+el texto terminaba en `Pregunta: …` sin turno de asistente; las secuencias
+de parada eran `<|im_end|>` y `<|endoftext|>`, que ese modo no emite.
+
+**Decisión.** El runtime aplica ChatML en el cliente, sobre `/completion`,
+sin delegar la plantilla al servidor:
+
+- mensaje de sistema = contrato semántico íntegro;
+- mensaje de usuario = la pregunta (y, si hay reintento, el error), siempre
+  al final;
+- el turno de asistente queda abierto para que el modelo escriba el SQL.
+
+La cabeza `<|im_start|>system` + contrato + `<|im_end|>` + arranque de
+usuario es idéntica byte a byte entre consultas (D-33). Las paradas son
+`<|im_end|>` y `<|im_start|>`. Extraer la primera sentencia si llega ruido
+es defensa en profundidad, no el control.
+
+**Justificación.** Un modelo de instrucciones genera un turno, no un
+documento que continúa. Sin señal de inicio de respuesta, el few-shot del
+bloque 7 es el patrón que más se parece a lo ya escrito, y lo prosigue.
+Aplicar la plantilla en el cliente es lo que permite conservar D-33 cuando
+el servidor no inyecta ChatML.
+
+**Alternativas descartadas.** `/v1/chat/completions` apoyándose en el
+servidor: el despliegue está en Content-only y no aplicaría la plantilla.
+Meter el contrato en el mensaje de usuario junto con la pregunta: mezclaría
+la parte invariante con la variable y pondría en riesgo la caché.
+
+---
+
 ## 5. Conclusiones técnicas
 
 Hallazgos derivados del diseño, con valor para el capítulo de resultados.
@@ -1086,11 +1262,9 @@ cómputo.
 
 ### C-04 · La caché de prefijo de prompt es un requisito, no una optimización
 
-**Confirmada empíricamente el 2026-09-01.** Medición P-07 sobre el hardware
-objetivo: el prefill en frío de un contrato de 2.540 tokens cuesta 17.541 ms,
-mientras que con la caché caliente cae a entre 72 y 1.253 ms. La reducción está
-entre el 93 % y el 99 %. Sin caché el sistema no es utilizable de forma
-interactiva; con ella responde en unos 8 segundos.
+**Confirmada empíricamente el 2026-09-01** con un prefijo sintético de 2.540
+fichas (prefill en frío 17.541 ms; con caché, 72–1.253 ms) y **replicada el
+2026-09-07** con el prefijo real del contrato, 2.890 fichas. Ver anexo de P-07.
 
 En inferencia por CPU, el coste dominante no es la generación sino el
 procesamiento del prompt. Con un contexto semántico de unos 2.000 tokens, el
@@ -1177,7 +1351,7 @@ ancho de banda de la conexión, no los motores.
 | P-04 | Comunicación a los tutores de las divergencias D-02, D-03, D-04 y D-11                             | **Resuelta** — enviada el 2026-09-01                   |
 | P-05 | Mapeo de macro-categorías                                                                          | **Resuelta** → D-30                                    |
 | P-06 | Política de retención en Delta                                                                     | **Resuelta** → D-31                                    |
-| P-07 | Medición de latencia de prefill con y sin caché de prefijo, para dimensionar el contrato semántico | **Resuelta** — ejecutada el 2026-09-01, ver anexo       |
+| P-07 | Medición de latencia de prefill con y sin caché de prefijo, para dimensionar el contrato semántico | **Resuelta** — 2026-09-01 (sintético) y 2026-09-07 (prefijo real); ver anexo |
 | P-08 | Base documental como quinto origen de datos                                                        | **Resuelta** → D-32. Se incorpora                      |
 
 ---
@@ -1206,7 +1380,8 @@ tokens de la pregunta.
 1. Servir el modelo con `llama-server`, un único slot, hilos igualados a los
    núcleos físicos.
 2. Construir un prefijo sintético de aproximadamente 2.000 tokens que emule el
-   volumen previsto del contrato semántico.
+   volumen previsto del contrato semántico. La réplica del 2026-09-07 sustituye
+   ese sintético por el prefijo real del contrato (2.890 fichas).
 3. Ejecutar tres peticiones al endpoint `/completion`, con `temperature = 0`:
    - **A** — prefijo + pregunta 1, con `cache_prompt = false` (referencia en
      frío).
@@ -1289,7 +1464,45 @@ contenedores para el runtime de inferencia.
 
 ---
 
-## 8. Reformulaciones pendientes en la memoria
+### Resultados obtenidos · 2026-09-07 · prefijo real
+
+Misma prueba, sustituyendo el prefijo sintético de 2.540 fichas por el
+prefijo real del contrato (2.890 fichas, 2.904 al concatenar la primera
+pregunta). Protocolo A–D idéntico: `temperature = 0`, `n_predict = 120`,
+`cache_prompt` según el escenario.
+
+**Entorno.** WSL2 sobre el mismo anfitrión (AMD Ryzen 5 6600H, 6 núcleos
+físicos). Inferencia por CPU. `llama-server` en `127.0.0.1:8080`, ventana
+4.096, un único slot. Qwen2.5-Coder-3B-Instruct Q4_K_M. No es el mismo
+binario ni el mismo sistema operativo que el 2026-09-01 (entonces Windows
+nativo): las magnitudes absolutas no son comparables entre fechas; sí lo es
+si la caché opera.
+
+| Escenario | Tokens de prompt procesados | Prefill (ms) | Prefill (tok/s) | Generación (tok/s) | Total (ms) |
+|---|---|---|---|---|---|
+| A — en frío, sin caché | 2.904 | 62.022 | 46,8 | 5,5 | 83.979 |
+| B — misma pregunta, caché poblada | 1 | 181 | 5,5 | 5,5 | 21.998 |
+| C — caché caliente, pregunta distinta | 9 | 444 | 20,3 | 5,5 | 22.262 |
+| D — caché caliente, tercera pregunta | 8 | 404 | 19,8 | 5,5 | 22.287 |
+
+**Interpretación.**
+
+1. *La caché opera también con el prefijo real.* El prefill cae de 62 s a
+   0,18–0,44 s (reducción del 99 % o más). D-33 y D-34 siguen en pie: el
+   usuario no paga el prefijo, y el arranque sí.
+
+2. *El tamaño extra no se lee en esta tabla.* A 145 fichas/s del 2026-09-01,
+   pasar de 2.540 a 2.904 habría costado unos 2,5 s más en frío. Aquí el
+   prefill en frío es 3,5 veces más lento que en Windows nativo (46,8
+   frente a 144,8 fichas/s), de modo que esa diferencia de 364 fichas queda
+   ahogada por el peaje de WSL2. La generación también: 5,5 fichas/s frente
+   a 15,1; 120 fichas de respuesta son ~22 s en WSL y ~8 s en el anfitrión.
+
+3. *Cabe en la ventana.* 2.904 de prompt más 120 de respuesta son ~3.024 de
+   4.096. El umbral de alerta de D-46 (~3.200 de prefijo) no se alcanza.
+
+4. *El techo no era 2.500.* Las 2.500 fichas de P-07 eran el sintético de la
+   prueba, no un límite. Queda formalizado en D-46.
 
 Afirmaciones de los documentos previos que deben reescribirse por ser
 técnicamente demasiado absolutas o imprecisas.
