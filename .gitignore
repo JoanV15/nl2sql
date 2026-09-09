@@ -49,6 +49,7 @@ trazas/
 evaluacion/resultados/*
 !evaluacion/resultados/nivel1_3b.json
 !evaluacion/resultados/nivel1_7b.json
+!evaluacion/resultados/hito2_7b.json
 
 # Artefactos del sistema
 .DS_Store
