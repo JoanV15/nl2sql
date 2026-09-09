@@ -20,10 +20,13 @@ Léelos antes de escribir código. Están en la raíz.
 
 | Documento | Qué contiene | Cuándo consultarlo |
 |---|---|---|
-| `DECISIONES.md` | Decisiones D-01 a D-41 y conclusiones C-01 a C-07, con justificación y alternativas descartadas | **Siempre.** Es la fuente de verdad |
+| `DECISIONES.md` | Decisiones D-01 a D-53 y conclusiones C-01 a C-11 | **Siempre.** Es la fuente de verdad |
+| `ROADMAP.md` | Hitos, criterio de hecho y punto de corte. Entrega 17 sep 2026 | Antes de ampliar alcance |
 | `ARQUITECTURA.md` | Arquitectura consolidada, componentes y fronteras de cómputo | Antes de tocar cualquier componente |
-| `CONTRATO_SEMANTICO.md` | Prefijo del prompt: esquema de Gold, métricas, reglas, abstención | Al trabajar en Gold o en el runtime |
-| `Preguntas.md` | 61 preguntas: requisitos de Gold y conjunto de evaluación | Al diseñar modelos o evaluar |
+| `CONTRATO_SEMANTICO.md` | Prefijo del prompt. **No toques `[PREFIJO]` sin permiso** | Al trabajar en Gold o en el runtime |
+| `Preguntas.md` | Catálogo de evaluación (63, con 49 y 52 descartadas) | Al diseñar modelos o evaluar |
+| `memoria/FUENTE.md` | Hechos, cifras y hallazgos para redactar la memoria | Al escribir la memoria o al retomar el proyecto |
+| `HANDOFF.md` | Estado y primer encargo si este chat se corta | Al abrir un agente nuevo |
 
 Si `ARQUITECTURA.md` y `DECISIONES.md` discrepan, prevalece `DECISIONES.md`.
 
@@ -77,9 +80,11 @@ preguntas 8 y 44 dependen de ello.
 **Fecha de referencia 2018-10-17 (D-15).** El dataset termina ahí. Ninguna
 expresión temporal se resuelve contra el reloj del sistema.
 
-**Memoria (C-03).** El presupuesto real es de 6 a 7 GB para contenedores, no de
-16. La plataforma de datos y el runtime de inferencia no se ejecutan a la vez:
-perfiles de Docker Compose separados.
+**Modelo del sistema: 7B (D-53).** Qwen2.5-Coder-7B-Instruct Q4_K_M. El 3B
+es solo brazo de ablación. No levantes los dos `llama-server` a la vez.
+
+**Memoria (C-03, R-08).** El presupuesto real es de 6 a 7 GB para contenedores,
+no de 16. Plataforma e inferencia no se ejecutan a la vez.
 
 **La nube está permitida (D-07, D-28).** El almacenamiento usa una ruta
 configurable: local por defecto y ADLS Gen2 mediante Azure for Students. El

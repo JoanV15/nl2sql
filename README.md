@@ -9,17 +9,21 @@ Dataset base: [Olist Brazilian E-Commerce](https://www.kaggle.com/datasets/olist
 
 ## Estado
 
-En desarrollo. Diseño arquitectónico cerrado; implementación en curso.
+Hito 1 cerrado (2026-09-09). Nivel 1: 13/18 con Qwen2.5-Coder-7B; 7/18 con 3B.
+Siguiente: Hito 2. Entrega 17 de septiembre de 2026. Ver `ROADMAP.md`.
 
 ## Documentación
 
 | Documento | Contenido |
 |---|---|
+| [`HANDOFF.md`](HANDOFF.md) | Relevo para un agente nuevo: estado y primer encargo |
+| [`ROADMAP.md`](ROADMAP.md) | Hitos, criterio de hecho y punto de corte |
 | [`ARQUITECTURA.md`](ARQUITECTURA.md) | Arquitectura consolidada, componentes y fronteras de cómputo |
-| [`DECISIONES.md`](DECISIONES.md) | Registro de decisiones con justificación y alternativas descartadas |
-| [`CONTRATO_SEMANTICO.md`](CONTRATO_SEMANTICO.md) | Contexto que recibe el modelo: esquema, métricas, reglas y política de abstención |
-| [`Preguntas.md`](Preguntas.md) | Catálogo de preguntas de negocio: requisitos de la capa Gold y conjunto de evaluación |
-| [`AGENTS.md`](AGENTS.md) | Contexto e instrucciones para agentes de código |
+| [`DECISIONES.md`](DECISIONES.md) | Registro de decisiones (D-01 a D-53) |
+| [`CONTRATO_SEMANTICO.md`](CONTRATO_SEMANTICO.md) | Prefijo del modelo. No editar `[PREFIJO]` a la ligera |
+| [`Preguntas.md`](Preguntas.md) | Catálogo de evaluación |
+| [`memoria/`](memoria/) | Fuente + plantilla para redactar la memoria |
+| [`AGENTS.md`](AGENTS.md) | Instrucciones para agentes de código |
 
 `DECISIONES.md` es la fuente de verdad. Si otro documento lo contradice, manda
 el registro de decisiones.
@@ -36,7 +40,7 @@ Actions ejerce de puerta de calidad.
 **Capa analítica.** Cuatro tablas denormalizadas con grano declarado, nombradas
 en castellano. El renombrado en la frontera de Gold es la capa semántica.
 
-**Runtime.** Qwen2.5-Coder 3B cuantizado, servido por `llama.cpp` en CPU. El
+**Runtime.** Qwen2.5-Coder 7B cuantizado (3B como ablación), servido por `llama.cpp` en CPU. El
 contexto es un contrato semántico estático y versionado, no una recuperación
 dinámica de metadatos: la medición de latencia sobre el hardware objetivo dio
 17,5 segundos de procesamiento del prompt en frío frente a menos de uno con la

@@ -842,6 +842,10 @@ del capítulo de resultados.
 sin caché de prefijo sigue siendo necesaria antes de fijar el tamaño del
 contexto: determina cuántos tokens puede permitirse el contrato semántico.
 
+**Corrección 2026-09-09.** D-52 midió la ablación. D-53 fija el 7B como
+modelo del sistema. El 3B no se descarta: queda como brazo de ablación y
+como opción de iteración rápida si el 7B no cabe junto a otra carga.
+
 ---
 
 ### D-30 · Macro-categorías como regla de negocio versionada
@@ -1417,9 +1421,38 @@ pago más usado (10). El seguimiento de instrucciones mejora con el
 tamaño; no es perfecto. El coste es el previsto en D-29: generación
 unas dos veces más lenta y latencia media que se duplica.
 
-**Alternativa descartada.** Dar el 7B por cerrado el Hito 1 y abandonar
-el 3B. El 3B sigue siendo el modelo de desarrollo (D-29); esta pasada
-es un punto de la curva, no un recambio.
+**Alternativa descartada en el momento de la medición.** Dar el 7B por
+cerrado el Hito 1 y abandonar el 3B. Esa frase queda superada el mismo día
+por D-53: el 7B pasa a ser el modelo del sistema; el 3B permanece como
+brazo de la ablación. No se borra esta pasada: es el punto 3B de la curva.
+
+---
+
+### D-53 · El 7B es el modelo del sistema; el 3B, el brazo de ablación
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** D-29 eligió 3B para desarrollar y 7B solo como punto de la
+curva. D-52 midió Nivel 1 con contrato 1.1, mismas preguntas y mismo arnés:
+7/18 frente a 13/18, `es_venta_valida` espurio de 8 a 2, latencia media de
+4,2 s a 8,8 s, ninguna regresión. WSL2 tiene 7,8 GB; el GGUF del 7B ocupa
+unos 4,7 GB.
+
+**Decisión.** Qwen2.5-Coder-7B-Instruct Q4_K_M es el modelo del runtime, de
+la evaluación de los hitos siguientes y de la demostración. El 3B se
+conserva en `~/modelos/` y en `evaluacion/resultados/nivel1_3b.json` como
+brazo de D-21. Los dos servidores no coexisten: hay que apagar uno antes
+de levantar el otro. Durante los Hitos 3 a 5 el orden es construir la
+plataforma con el modelo parado y consultar con la plataforma parada.
+
+**Justificación.** El incumplimiento de D-48 era sobre todo capacidad de
+seguimiento de instrucciones. Quedarse en 3B haría del contrato un texto
+que el sistema no cumple. 8,8 s por pregunta son usables en una interfaz
+analítica. El 3B no se tira: sin él no hay ablación.
+
+**Alternativa descartada.** Seguir desarrollando en 3B y cambiar a 7B solo
+en el Hito 7. Mediría mal los niveles 2 y 3, porque el cuello de botella
+del 3B ya está cuantificado.
 
 ---
 
@@ -1540,6 +1573,53 @@ ancho de banda de la conexión, no los motores.
 
 ---
 
+### C-08 · En 3B, los ejemplos mandan más que las reglas en prosa
+
+Tras escribir D-48 en el bloque 4, el 3B siguió aplicando `es_venta_valida`
+a censos. El few-shot del bloque 7 tenía dos SQL con la bandera y el año;
+añadir un tercero sin ellos (D-49) no invirtió el patrón: la precisión
+pasó de 6/18 a 7/18 y la pregunta 1 **regresó**. El 7B sí aplica D-48 en
+lo sustancial (espurios de 8 a 2).
+
+**Formulación defendible.** Un contrato semántico no se cumple solo porque
+esté escrito. A 3.000 millones de parámetros, el few-shot pesa más que un
+párrafo normativo. El tamaño del modelo es una variable de gobernanza, no
+solo de calidad de SQL.
+
+---
+
+### C-09 · Las latencias no se comparan entre Windows, WSL2 ni cupos de CPU
+
+El `.wslconfig` limitaba WSL2 a 4 procesadores sobre un Ryzen 5 6600H de 6
+núcleos físicos. Con 4 CPU, generación ~5,5 fichas/s (2026-09-07). Con 6
+CPU, ~9,6 fichas/s en el 3B de D-52. El prefill en frío de Windows nativo
+(144,8 fichas/s, 2026-09-01) no es comparable al de WSL2.
+
+**Consecuencia.** En la memoria, cada cifra de latencia lleva entorno,
+hilos y fecha. Lo replicable entre fechas es *si la caché opera*, no el
+milisegundo.
+
+---
+
+### C-10 · El 0/18 del primer arnés fue fontanería, no el modelo
+
+Las 18 preguntas del Nivel 1 generaron SQL a menudo correcto envuelto en
+vallas markdown y en una segunda consulta. Causa: completación cruda a un
+modelo Instruct, sin ChatML, con paradas que ese modo no emite (D-47).
+Tras ChatML, las 18 pasan el validador. La precisión 0 no se reporta como
+fracaso del enfoque NL-to-SQL.
+
+---
+
+### C-11 · Un saldo neto oculta regresiones
+
+El contrato 1.1 se reportó como 6/18 → 7/18. En esa pasada la pregunta 1
+pasó de acierto a fallo (`COUNT` con `es_venta_valida`). D-50 y el arnés
+con `--etiqueta` existen para que el capítulo de resultados nombre qué
+cambia de veredicto, en los dos sentidos.
+
+---
+
 ## 6. Riesgos identificados
 
 | Id | Riesgo | Mitigación |
@@ -1551,6 +1631,8 @@ ancho de banda de la conexión, no los motores.
 | R-05 | Confusión entre dato real y simulado ante el tribunal | Identificación explícita en la memoria; los resultados de negocio se apoyan en dato real |
 | R-06 | Integración de Spark con ADLS consume calendario | D-07; ruta configurable y plan B local |
 | R-07 | Soporte de lectura Delta desde DuckDB según versión | D-10; plan B con copia en Parquet plano |
+| R-08 | El 7B (~4,7 GB) y la plataforma no caben a la vez en 7,8 GB de WSL | D-53; perfiles secuenciales: construir o consultar, no ambos |
+| R-09 | Crédito del chat de arquitectura agotado antes de la entrega | `memoria/FUENTE.md` + `HANDOFF.md`; el usuario lidera con `ROADMAP.md` |
 
 ---
 
@@ -1566,6 +1648,8 @@ ancho de banda de la conexión, no los motores.
 | P-06 | Política de retención en Delta                                                                     | **Resuelta** → D-31                                    |
 | P-07 | Medición de latencia de prefill con y sin caché de prefijo, para dimensionar el contrato semántico | **Resuelta** — 2026-09-01 (sintético) y 2026-09-07 (prefijo real); ver anexo |
 | P-08 | Base documental como quinto origen de datos                                                        | **Resuelta** → D-32. Se incorpora                      |
+| P-09 | Triaje de alcance del Hito 2 (preguntas 19–55 y abstención)                                        | **Pendiente** — primer paso del Hito 2                 |
+| P-10 | El 7B como modelo del sistema tras la ablación                                                     | **Resuelta** → D-53                                    |
 
 ---
 

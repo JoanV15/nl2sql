@@ -46,7 +46,9 @@ credenciales*.json
 
 # Trazas y resultados de ejecución
 trazas/
-evaluacion/resultados/
+evaluacion/resultados/*
+!evaluacion/resultados/nivel1_3b.json
+!evaluacion/resultados/nivel1_7b.json
 
 # Artefactos del sistema
 .DS_Store

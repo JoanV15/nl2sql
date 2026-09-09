@@ -19,7 +19,7 @@ trasladarla en caliente cuesta una hora por hito y tres días al final.
 
 ---
 
-## Hito 1 · Rebanada vertical *(en curso)*
+## Hito 1 · Rebanada vertical *(cerrado 2026-09-09)*
 
 **Objetivo.** Responder de extremo a extremo las 18 preguntas del Nivel 1 con el
 modelo local, y medir la precisión.
@@ -33,6 +33,11 @@ referencia y arnés de evaluación.
 **Criterio de hecho.** Un comando acepta una pregunta y devuelve resultado y
 SQL. Las 18 se ejecutan sin fallo del validador. Informe de precisión. Recuento
 del contrato con `/tokenize` anotado.
+
+**Cierre.** Contrato 1.1. Validador: 18/18 SQL válido. Precisión Nivel 1 con
+el 7B (D-53): **13/18**. Ablación 3B: 7/18. Prefijo: 3.067 fichas. Commits
+relevantes: `1332290`, `e0847f0`, `259b62f`. Los cinco KO restantes (5, 9,
+10, 13, 15) son resultado experimental, no trabajo pendiente del Hito 1.
 
 **Tu revisión.** Ejecuta tres preguntas a mano y lee el SQL generado. Abre la
 traza y comprueba que registra lo que dice D-22. Verifica que el test de
