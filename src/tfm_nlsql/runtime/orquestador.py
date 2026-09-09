@@ -32,6 +32,10 @@ class ResultadoConsulta:
     abstencion: str | None = None
     error: str | None = None
     id_traza: int | None = None
+    prompt_n: int | None = None
+    prompt_ms: float | None = None
+    predicted_n: int | None = None
+    predicted_ms: float | None = None
 
 
 def extraer_salida(texto: str) -> tuple[str | None, str | None]:
@@ -72,6 +76,7 @@ def consultar(
 
     prompt = construir_prompt(pregunta)
     gen = completar(prompt)
+    primera = gen
     sql_crudo, abstencion = extraer_salida(gen.texto)
     reintentos: list[dict] = []
     veredicto = "pendiente"
@@ -137,6 +142,10 @@ def consultar(
         abstencion=abstencion,
         error=error,
         id_traza=id_traza,
+        prompt_n=primera.prompt_n,
+        prompt_ms=primera.prompt_ms,
+        predicted_n=primera.predicted_n,
+        predicted_ms=primera.predicted_ms,
     )
 
 

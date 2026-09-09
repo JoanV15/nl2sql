@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -26,14 +27,11 @@ class ErrorLLM(RuntimeError):
     pass
 
 
-def _post(ruta: str, cuerpo: dict, timeout: float) -> dict:
-    data = json.dumps(cuerpo).encode("utf-8")
-    req = Request(
-        f"{LLAMA_URL.rstrip('/')}{ruta}",
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+def _url(ruta: str) -> str:
+    return f"{LLAMA_URL.rstrip('/')}{ruta}"
+
+
+def _leer(req: Request, timeout: float) -> dict:
     try:
         with urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
@@ -42,6 +40,21 @@ def _post(ruta: str, cuerpo: dict, timeout: float) -> dict:
         raise ErrorLLM(f"llama-server {e.code}: {detalle}") from e
     except URLError as e:
         raise ErrorLLM(f"llama-server no responde en {LLAMA_URL}: {e.reason}") from e
+
+
+def _get(ruta: str, timeout: float = 10) -> dict:
+    return _leer(Request(_url(ruta), method="GET"), timeout)
+
+
+def _post(ruta: str, cuerpo: dict, timeout: float) -> dict:
+    data = json.dumps(cuerpo).encode("utf-8")
+    req = Request(
+        _url(ruta),
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    return _leer(req, timeout)
 
 
 def completar(
@@ -79,3 +92,43 @@ def contar_fichas(texto: str) -> int:
     if tokens is None:
         raise ErrorLLM(f"/tokenize no devolvió tokens: {raw!r}")
     return len(tokens)
+
+
+def _hilos_proceso() -> int | None:
+    """llama-server no publica --threads en /props; se lee del cmdline."""
+    for entrada in Path("/proc").iterdir():
+        if not entrada.name.isdigit():
+            continue
+        try:
+            partes = [
+                p.decode("utf-8", "replace")
+                for p in (entrada / "cmdline").read_bytes().split(b"\0")
+                if p
+            ]
+        except OSError:
+            continue
+        if not partes or "llama-server" not in partes[0]:
+            continue
+        for flag in ("-t", "--threads"):
+            if flag in partes:
+                i = partes.index(flag)
+                if i + 1 < len(partes):
+                    return int(partes[i + 1])
+            prefijo = flag + "="
+            for p in partes:
+                if p.startswith(prefijo):
+                    return int(p.split("=", 1)[1])
+    return None
+
+
+def metadatos_servidor() -> dict:
+    """Modelo, cuantización, n_ctx e hilos del llama-server en marcha."""
+    props = _get("/props")
+    ruta = props.get("model_path") or props.get("model_alias") or ""
+    n_ctx = (props.get("default_generation_settings") or {}).get("n_ctx")
+    return {
+        "modelo": Path(str(ruta)).name or None,
+        "cuantizacion": props.get("model_ftype"),
+        "n_ctx": n_ctx,
+        "hilos": _hilos_proceso(),
+    }

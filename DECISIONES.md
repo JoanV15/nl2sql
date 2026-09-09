@@ -1361,6 +1361,68 @@ El texto seguiría pidiendo reseñas y el SQL seguiría contando pedidos.
 
 ---
 
+### D-52 · Ablación 3B frente a 7B: adherencia a D-48
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** Tras D-48 el contrato 1.1 declara que el censo no filtra por
+`es_venta_valida`. El modelo de 3B no aplicó la regla: 8 de 18 consultas
+del Nivel 1 llevaban la bandera en preguntas que no tratan de ventas ni
+importes. Quedaba abierta la hipótesis de que el fallo era de capacidad
+de seguimiento de instrucciones, no del contrato. D-21 y D-29 ya
+preveían el tamaño de modelo como eje de ablación.
+
+**Diseño.** Una sola variable: el peso del modelo. Contrato 1.1, catálogo
+de Nivel 1, SQL de referencia y arnés de comparación permanecen fijos.
+Ambos GGUF son Qwen2.5-Coder-Instruct Q4_K_M, `n_ctx` 4096, 6 hilos,
+`llama-server` en `127.0.0.1:8080`. El 3B y el 7B no coexisten (C-03).
+
+El arnés registra metadatos de servidor y, como indicador de D-48, el
+recuento de SQL generados que contienen `es_venta_valida` cuando la
+pregunta no trata de ventas, importes o facturación. La detección es
+léxica sobre el enunciado (`venta|vend|factur|importe|ingreso|ticket|gmv|gasto|envío|flete|precio|caro`).
+La métrica de acierto no se relaja (D-50).
+
+Cada pasada se etiqueta (`nivel1_3b.json`, `nivel1_7b.json`). La pasada
+3B se repitió con metadatos; el `nivel1.json` previo no es comparable.
+
+**Resultados.**
+
+| | 3B Q4_K_M | 7B Q4_K_M |
+|---|---|---|
+| Precisión Nivel 1 | 7/18 = 0,3888888888888889 | 13/18 = 0,7222222222222222 |
+| `es_venta_valida` espurio | 8 (1, 6, 7, 8, 9, 10, 14, 17) | 2 (9, 10) |
+| Prefill medio (fichas/s) | 27,88 | 12,77 |
+| Generación media (fichas/s) | 9,63 | 4,78 |
+| Latencia media por pregunta (ms) | 4.171 | 8.804 |
+
+Preguntas que el 7B acierta y el 3B no: 1, 6, 7, 8, 14, 17. Las seis
+eran censo con bandera espuria en el 3B; el 7B omite la bandera y el
+conjunto coincide con la referencia.
+
+**Regresiones:** ninguna. Las siete que el 3B acertaba (2, 3, 4, 11,
+12, 16, 18) las acierta el 7B.
+
+Siguen en fallo ambos: 5 (el 7B agrupa por `macro_categoria` en lugar
+de `categoria_producto`), 9 y 10 (siguen con bandera espuria), 13
+(`importe_pagado` en lugar de `importe_articulos`), 15 (el 7B acierta
+el mes con `DATE_TRUNC` pero añade `RANK()`, y D-50 compara el conjunto
+completo).
+
+**Interpretación.** La hipótesis se sostiene en lo sustancial: pasar de
+3B a 7B reduce el incumplimiento de D-48 de 8 a 2 y sube la precisión
+en 6 aciertos, todos ellos de censo. No desaparece del todo: el 7B
+sigue aplicando la bandera a la media de entrega (9) y al método de
+pago más usado (10). El seguimiento de instrucciones mejora con el
+tamaño; no es perfecto. El coste es el previsto en D-29: generación
+unas dos veces más lenta y latencia media que se duplica.
+
+**Alternativa descartada.** Dar el 7B por cerrado el Hito 1 y abandonar
+el 3B. El 3B sigue siendo el modelo de desarrollo (D-29); esta pasada
+es un punto de la curva, no un recambio.
+
+---
+
 ## 5. Conclusiones técnicas
 
 Hallazgos derivados del diseño, con valor para el capítulo de resultados.
