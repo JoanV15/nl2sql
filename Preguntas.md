@@ -45,7 +45,7 @@ del sistema: un fallo aquí invalida el resto.
 | 13 | ¿Qué ciudad nos genera más ingresos? | |
 | 14 | ¿Cuántos pedidos llegaron más tarde de lo previsto? | |
 | 15 | ¿Cuál fue el mejor mes de ventas? | |
-| 16 | ¿Cuántas reseñas de una estrella hemos recibido? | |
+| 16 | ¿Cuántos pedidos recibieron una valoración media de una estrella? | |
 | 17 | ¿Cuántos pedidos se pagaron a plazos? | |
 | 18 | ¿Cuál es el producto más caro que hemos vendido? | |
 

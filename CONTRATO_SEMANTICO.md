@@ -1,6 +1,6 @@
 # Contrato Semántico — TFM NL-to-SQL
 
-**Versión:** 1.0 · **Fecha:** 2026-09-03
+**Versión:** 1.1 · **Fecha:** 2026-09-09
 
 Artefacto estático que se antepone a toda pregunta del usuario. Constituye el
 único contexto que el modelo recibe sobre el dominio: no hay recuperación
@@ -309,6 +309,15 @@ ataca el error de mayor probabilidad.
 > `estado_pedido` sigue disponible: para consultar cancelaciones o pedidos no
 > servidos hay que filtrar por esa columna y no por la bandera.
 >
+> **Censo frente a ventas.** Contar clientes, reseñas, métodos de pago o
+> pedidos es un censo sobre el total: no se filtra por `es_venta_valida`. La
+> bandera solo aplica cuando la pregunta trata de ventas, importes o
+> facturación.
+>
+> **Rankings.** Un ranking sin número explícito devuelve todos los grupos
+> ordenados de mayor a menor. Solo se limita cuando la pregunta pide los N
+> primeros.
+>
 > **Macro-categorías.** `macro_categoria` toma doce valores: Electrónica e
 > Informática, Electrodomésticos, Hogar y Muebles, Moda y Accesorios, Belleza y
 > Salud, Deporte Juguetes y Ocio, Bricolaje Jardín y Construcción, Cultura
@@ -338,6 +347,15 @@ banderas de D-13, ya señalado en `obt_pedidos`: la bandera es un atajo para el
 caso común y nunca debe ocultar la columna de la que deriva. Las preguntas 8 y
 44 dependen de que el modelo entienda esto.
 
+El párrafo de censo (D-48) extiende a clientes, reseñas, métodos de pago y
+pedidos el criterio que D-44 ya fijó para vendedores. Sin él, el few-shot del
+bloque 7 enseña `es_venta_valida` como filtro por defecto y el modelo lo copia
+en recuentos que no son de ventas.
+
+La regla de rankings (D-50) cubre las preguntas del tipo "qué categorías venden
+más", sin top-N. Un superlativo en singular —"el más usado", "el mejor mes"—
+sigue siendo una fila.
+
 ---
 
 ## Bloque 5 · Ausencias declaradas **[PREFIJO]**
@@ -350,6 +368,8 @@ caso común y nunca debe ocultar la columna de la que deriva. Las preguntas 8 y
 >   pagado al transportista.
 > - Nombre, descripción o marca del producto. Solo existe `id_producto`, que es
 >   un identificador opaco.
+> - Reseñas individuales. `nota_resena` es la media a grano de pedido; no se
+>   pueden contar reseñas sueltas.
 > - Puntuaciones predictivas de cualquier tipo: riesgo de fuga, propensión de
 >   compra, segmentación.
 > - Inventario, stock y devoluciones. El estado `unavailable` indica que el
@@ -366,6 +386,8 @@ no existe coste de producto, no existe modelo predictivo de fuga, y
 Ninguna de esas tres cosas se deduce de un esquema, y un modelo que solo ve
 columnas existentes construirá una respuesta plausible. También debe declararse
 que los productos carecen de nombre: solo existe `id_producto`, que es un hash.
+La línea sobre reseñas individuales (D-51) declara el techo de D-38: al grano
+de `obt_pedidos` no se cuentan reseñas, se cuentan pedidos con una media.
 
 ---
 
@@ -423,6 +445,13 @@ constituyen el objeto de evaluación de las preguntas 56 a 63.
 > LIMIT 5;
 > ```
 >
+> Pregunta: ¿Cuántos pedidos están en estado shipped?
+> ```
+> SELECT COUNT(*) AS num_enviados
+> FROM obt_pedidos
+> WHERE estado_pedido = 'shipped';
+> ```
+>
 > Pregunta: ¿Cuál es nuestro margen de beneficio?
 > ```
 > ABSTENCION: no existe el coste del producto, solo el precio de venta, de modo
@@ -431,7 +460,7 @@ constituyen el objeto de evaluación de las preguntas 56 a 63.
 
 **Notas de diseño** *(no viajan al modelo)*
 
-Los tres ejemplos son el bloque más caro por unidad y el primero a recortar
+Los cuatro ejemplos son el bloque más caro por unidad y el primero a recortar
 según D-37, de modo que cada uno debe ganarse su sitio enseñando algo que
 ningún otro enseña.
 
@@ -445,7 +474,12 @@ que es la trampa señalada en la nota de diseño de esa tabla: los agregados de
 vendedor son de por vida y no admiten filtro temporal. Un ejemplo resuelve esa
 ambigüedad mejor que un párrafo.
 
-El tercero demuestra que la abstención es una salida legítima y fija su formato
+El tercero es un censo sin `es_venta_valida` y sin filtro de año (D-49). Los
+dos primeros llevan ambos, y el modelo los copiaba a preguntas que no los
+piden. No es ninguna de las 63 del catálogo: ninguna pregunta usa `shipped`;
+la 8 es `canceled` en 2017.
+
+El cuarto demuestra que la abstención es una salida legítima y fija su formato
 exacto. Sin un ejemplo, la instrucción del bloque 6 compite con la tendencia
 del modelo a responder siempre algo.
 
@@ -458,17 +492,19 @@ del modelo a responder siempre algo.
 | 1 · Rol y formato | ~150 | 193 | **Completo** |
 | 2 · Esquema | ~1.420 | 1.592 | **Completo** (32 + 18 + 15 + 9 = 74 columnas) |
 | 3 · Métricas y sinónimos | ~150 | 161 | **Completo** |
-| 4 · Reglas de negocio | ~250 | 386 | **Completo** |
-| 5 · Ausencias declaradas | ~150 | 185 | **Completo** |
+| 4 · Reglas de negocio | ~350 | 490 | **Completo** (D-48 censo, D-50 rankings) |
+| 5 · Ausencias declaradas | ~180 | 218 | **Completo** (D-51 reseñas individuales) |
 | 6 · Abstención | ~130 | 160 | **Completo** |
-| 7 · Ejemplos | ~300 | 213 | **Completo** |
-| **Total** | **~2.450** | **2.890** | Ventana 4.096. Ocupación ~3.040. **Cabe.** |
+| 7 · Ejemplos | ~350 | 253 | **Completo** (D-49, cuatro ejemplos) |
+| **Total** | **~2.730** | **3.067** | Ventana 4.096. Ocupación ~3.217. **Cabe.** |
 
-**Verificación.** Recuento del 2026-09-07 con el endpoint `/tokenize` de
+**Verificación.** Recuento del 2026-09-09 con el endpoint `/tokenize` de
 `llama-server` (Qwen2.5-Coder-3B-Instruct Q4_K_M), concatenando los bloques
 `[PREFIJO]` en el orden del documento. El prefijo que consume el runtime
-mide **2.890 fichas**. La suma de los siete bloques, tokenizados por
-separado, coincide con ese total.
+mide **3.067 fichas**. La suma de los siete bloques, tokenizados por
+separado, coincide con ese total. El recuento previo (2026-09-07) era
+2.890; D-48, D-49, D-50 y D-51 añaden 177 fichas. El umbral de alerta de
+D-46 (~3.200 de prefijo) no se alcanza.
 
 Las estimaciones previas de esta tabla (~2.450) eran a ojo y quedaron un
 15 % por debajo del recuento real. El «límite medido» de 2.500 que figuraba
@@ -478,7 +514,7 @@ contrato.
 
 **Techo.** Lo fija la ventana de contexto, no P-07 (D-46):
 
-2.890 (prefijo) + ~30 (pregunta) + 120 (respuesta) ≈ 3.040 de 4.096.
+3.067 (prefijo) + ~30 (pregunta) + 120 (respuesta) ≈ 3.217 de 4.096.
 
 El coste del exceso respecto al sintético de P-07 es del orden de 2,5 s más
 de prefill en frío a ~145 fichas/s, y D-34 lo absorbe en el arranque. Con la

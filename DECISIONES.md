@@ -1210,6 +1210,157 @@ la parte invariante con la variable y pondría en riesgo la caché.
 
 ---
 
+### D-48 · El censo no filtra por venta válida
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** D-44 ya fijó que «vendedores distintos» es el censo de
+`obt_vendedores`, no el subconjunto con facturación. La primera pasada del
+Nivel 1 mostró el mismo error en otras preguntas de recuento: el modelo
+añadía `es_venta_valida` al censo de clientes por estado (pregunta 6), a la
+media de reseñas (7), al método de pago más usado (10) y a los pedidos
+pagados a plazos (17). Los SQL de referencia ya omitían la bandera. El
+few-shot del bloque 7, donde los dos ejemplos con SQL la llevan, es la vía
+más plausible de esa generalización (ver D-49).
+
+**Decisión.** Contar clientes, reseñas, métodos de pago o pedidos es un
+censo sobre el total, sin filtrar por `es_venta_valida`. La bandera solo
+entra cuando la pregunta trata de ventas, importes o facturación. La regla
+se declara en el bloque 4 del contrato, junto al párrafo de venta válida.
+
+**Justificación.** Mismo criterio que D-12 y D-44: ante una métrica ambigua,
+fijar la definición por la pregunta de negocio y publicarla. Un director
+que pregunta cuántos clientes *tenemos* o cuál es el método de pago más
+*usado* pregunta por el censo, no por el subconjunto con GMV. Aplicar la
+bandera a esos recuentos cambia el número sin fallar, que es el peor tipo
+de error. Las preguntas 6, 7, 10 y 17 quedan resueltas con esta regla; sus
+SQL de referencia no se tocan porque ya la cumplían.
+
+**Alternativa descartada.** Dejar que cada pregunta decida en silencio.
+Reproduce la ambigüedad que D-44 cerró para vendedores y obliga al modelo
+de 3B a inferir una frontera que el contrato no nombra.
+
+---
+
+### D-49 · Contraste en el few-shot: un censo sin bandera ni año
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** Los dos ejemplos con SQL del bloque 7 llevan `es_venta_valida`
+y un filtro de año. En la primera pasada el modelo copió ambos a preguntas
+que no los pedían: censo con bandera (6, 7, 10, 17) y año 2018 inventado
+(11, 15). Borrar los ejemplos no vale: el primero enseña métrica canónica
+más bandera más grano; el segundo, ventana, «año pasado» = 2017 y
+`obt_lineas_pedido` frente a `obt_vendedores`.
+
+**Decisión.** Se añade un tercer ejemplo con SQL, de tipo censo y sin
+expresión temporal, que no lleva ni la bandera ni el año:
+
+```
+Pregunta: ¿Cuántos pedidos están en estado shipped?
+SELECT COUNT(*) AS num_enviados
+FROM obt_pedidos
+WHERE estado_pedido = 'shipped';
+```
+
+No es ninguna de las 63 preguntas de `Preguntas.md` ni una variante
+reconocible de ellas. Ninguna pregunta del catálogo usa el estado
+`shipped`; la 8 cuenta `canceled` en 2017. Usar un ítem de evaluación como
+ejemplo entrenaría sobre el test.
+
+Los dos ejemplos previos y el de abstención se conservan. El de abstención
+pasa a ser el cuarto.
+
+**Justificación.** El contraste tiene que ser visible en el few-shot, no
+solo en la prosa del bloque 4. La omisión de la bandera cuenta más si la
+tabla *tiene* `es_venta_valida` y el ejemplo no la usa. De ahí
+`obt_pedidos` y no `obt_vendedores`.
+
+**Alternativa descartada.** Sustituir uno de los dos ejemplos existentes:
+perdería una lección que el otro no cubre. Recortar el few-shot a un solo
+ejemplo con SQL: ahorraría fichas y reabriría la contaminación.
+
+---
+
+### D-50 · Execution accuracy es igualdad exacta del conjunto
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** D-21 fijó *execution accuracy* por comparación de conjuntos
+de resultados. En la primera pasada, la pregunta 5 acertó el sentido del
+ranking pero no la métrica ni la cardinalidad, y la 10 acertó el método
+ganador (`credit_card`) con un recuento distinto. Relajar la métrica a
+«acierto del ganador» subiría la cifra sin cambiar lo que el sistema
+devuelve. Esa relajación, decidida *después* de ver los fallos, sesgaría
+el conjunto hacia lo que ya se sabe que casi funciona, el mismo vicio que
+D-21 prohibió al exigir que el SQL de referencia se escriba antes de
+observar el sistema.
+
+**Decisión.** La métrica no se relaja: dos consultas aciertan solo si los
+conjuntos de filas, tras la canonización del arnés, son iguales. La
+pregunta 5 y la 10 siguen contando como fallo aunque acierten el ganador,
+y así se reporta. Esta decisión se registra el 2026-09-09, **antes** de
+conocer la precisión de la pasada con el contrato 1.1.
+
+Como la 5 fallaba también porque el enunciado no fija cuántas filas
+devuelve un ranking sin top-N, el bloque 4 declara: un ranking sin número
+explícito devuelve todos los grupos ordenados de mayor a menor, y solo se
+limita cuando la pregunta pide los N primeros. Eso precisa el contrato; no
+cambia la métrica.
+
+**Justificación.** Un porcentaje que perdona la cardinalidad o las columnas
+extra deja de ser falsable. El capítulo de resultados debe poder decir qué
+falla y por qué, no inflar el acierto con una métrica más permisiva
+elegida a posteriori.
+
+**Alternativa descartada.** Comparar solo la primera columna, o ignorar el
+`LIMIT` inyectado. Convertiría en acierto respuestas que no son las que
+pide la pregunta y haría incomparable cualquier pasada futura.
+
+---
+
+### D-51 · La pregunta 16 se reformula al grano de pedido
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** La pregunta 16 pedía «¿Cuántas reseñas de una estrella hemos
+recibido?». El SQL de referencia era `COUNT(*) FROM obt_pedidos WHERE
+nota_resena = 1`, con alias `num_resenas`. Por D-38, `nota_resena` es la
+**media** de las reseñas del pedido. Esa consulta cuenta pedidos cuya
+media vale exactamente 1 (11.316) y los etiqueta como reseñas. En el CSV
+de origen hay 11.424 reseñas reales de una estrella; 547 pedidos tienen
+más de una reseña y 123 tienen media no entera, que quedan fuera de
+cualquier comparación con un entero. El modelo, además, generó
+`nota_resena = 5`. Familia (a) de la clasificación de fallos del Nivel 1:
+la referencia no era válida, con independencia del error del modelo.
+
+**Decisión.** Se reformula al grano real de `obt_pedidos`: «¿Cuántos
+pedidos recibieron una valoración media de una estrella?». El alias de la
+referencia pasa de `num_resenas` a `num_pedidos`. El bloque 5 del contrato
+declara que las reseñas individuales no son contables a grano de pedido.
+
+Esta reformulación **surgió de la evaluación**, no del diseño previo del
+catálogo. Se hace porque la pregunta original es irresoluble con el grano
+declarado: no existe una fila por reseña, y fingir que `nota_resena = 1`
+cuenta reseñas mentiría en el resultado y en el nombre de la columna.
+Cambiar un ítem después de ver resultados es el sesgo que D-21 prohíbe
+cuando se hace para que el sistema acierte; aquí se hace para que el ítem
+deje de preguntar algo que Gold no puede responder. El error del modelo
+(`= 5`) queda como dato de la primera pasada; la pregunta nueva se evalúa
+en la pasada del contrato 1.1.
+
+**Justificación.** D-38 ya había elegido la media y el tipo `DECIMAL`.
+Mantener el enunciado original habría obligado o bien a inventar grano de
+reseña —una quinta OBT, descartada por D-11 y por calendario— o bien a
+seguir evaluando una mentira. Declarar la limitación en el bloque 5 es
+coherente con las demás ausencias: lo que no existe se nombra, no se
+disimula.
+
+**Alternativa descartada.** Dejar el enunciado y cambiar solo el alias.
+El texto seguiría pidiendo reseñas y el SQL seguiría contando pedidos.
+
+---
+
 ## 5. Conclusiones técnicas
 
 Hallazgos derivados del diseño, con valor para el capítulo de resultados.
@@ -1503,6 +1654,39 @@ si la caché opera.
 
 4. *El techo no era 2.500.* Las 2.500 fichas de P-07 eran el sintético de la
    prueba, no un límite. Queda formalizado en D-46.
+
+---
+
+### Resultados obtenidos · 2026-09-09 · prefijo 1.1 (D-48 a D-51)
+
+Misma prueba A–D sobre el prefijo tras D-48, D-49, D-50 y D-51. Protocolo
+idéntico: `temperature = 0`, `n_predict = 120`, `cache_prompt` según el
+escenario. La caché del prefijo 1.0 queda invalidada.
+
+**Entorno.** WSL2, `llama-server` en `127.0.0.1:8080`, ventana 4.096, un
+único slot. Qwen2.5-Coder-3B-Instruct Q4_K_M. Recuento del prefijo:
+3.067 fichas (2.890 el 2026-09-07). El primer prompt, con ChatML y la
+pregunta 1, ocupa 3.094.
+
+| Escenario | Tokens de prompt procesados | Prefill (ms) | Prefill (tok/s) | Generación (tok/s) | Total (ms) |
+|---|---|---|---|---|---|
+| A — en frío, sin caché | 3.094 | 98.268 | 31,5 | 10,2 | 100.231 |
+| B — misma pregunta, caché poblada | 1 | 92 | 10,9 | 10,9 | 1.933 |
+| C — caché caliente, pregunta distinta | 14 | 468 | 29,9 | 10,9 | 2.669 |
+| D — caché caliente, tercera pregunta | 13 | 441 | 29,5 | 10,3 | 3.729 |
+
+**Interpretación.**
+
+1. *La caché opera con el prefijo 1.1.* El prefill cae de 98 s a
+   0,09–0,47 s. D-33 y D-34 siguen en pie tras invalidar la caché.
+
+2. *El umbral de D-46 no se alcanza.* 3.067 de prefijo quedan por debajo
+   de ~3.200. 3.094 de prompt más 120 de respuesta son ~3.214 de 4.096.
+
+3. *Las magnitudes absolutas no se comparan con el 2026-09-07.* La
+   generación salió a ~10 fichas/s frente a 5,5; el prefill en frío, a
+   31,5 frente a 46,8. Lo que se replica es si la caché opera, no el
+   milisegundo.
 
 Afirmaciones de los documentos previos que deben reescribirse por ser
 técnicamente demasiado absolutas o imprecisas.

@@ -6,7 +6,7 @@ from tfm_nlsql.runtime.prompt import construir_prompt, prefijo_invariante
 
 def test_prefijo_contiene_las_cuatro_tablas_del_contrato() -> None:
     prefijo, cat, version = cargar_contrato()
-    assert version == "1.0"
+    assert version == "1.1"
     for t in ("obt_pedidos", "obt_lineas_pedido", "obt_vendedores", "obt_embudo_web"):
         assert f"CREATE TABLE {t}" in prefijo
         assert t in cat
