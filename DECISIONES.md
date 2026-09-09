@@ -1486,8 +1486,8 @@ rechaza el validador, no el modelo.
 **Definiciones que no están en el contrato y se anotan, no se cierran.**
 24: cerrada en D-56. 33 y 37: cerradas en D-55. 27: crecimiento relativo, no delta. 40: solo clientes con primera compra hasta 2018-01-17 (nueve meses de
 observación). 61: semana natural de DuckDB (lunes 2018-10-15); esa
-semana no tiene venta válida, el resultado es 0. 62: columna
-`importe_total`, no GMV. 30, 42 y 46 superan las 1.000 filas del
+semana no tiene venta válida, el resultado es 0. 62: cerrada en D-57.
+30, 42 y 46 superan las 1.000 filas del
 validador: el arnés verá un recorte, no el censo.
 
 **Justificación.** Escribir referencia contra columnas NULL o contra
@@ -1545,6 +1545,29 @@ ciudad otra vez en la 24 duplicaría el ítem y cambiaría el resultado
 **Alternativa descartada.** Reescribir la 24 a `ciudad_cliente`. Haría de
 la 13 y la 24 la misma pregunta con distinto recorte geográfico, y Joan
 cerró UF.
+
+---
+
+### D-57 · La pregunta 62 pide `importe_total`, no GMV
+
+**Fecha:** 2026-09-09 · **Estado:** Firme
+
+**Contexto.** La pregunta 62 pide «el importe total de los pedidos». El SQL
+de 75875af ya es `SUM(importe_total)` sobre `obt_pedidos` con
+`es_venta_valida`. En Gold esa suma vale 15,7 M; `importe_articulos`
+vale 13,5 M. El grano pedido evita el doble conteo de líneas.
+
+**Decisión.** La 62 es `SUM(importe_total)` en `obt_pedidos`, no GMV.
+`62.sql` no se toca. No se toca el prefijo del contrato.
+
+**Justificación.** D-12 nombra facturación y GMV como `importe_articulos`;
+este enunciado dice «importe total», que es la columna homónima (artículos
+más flete). Resolverlo en `obt_lineas_pedido` repetiría el flete o el
+precio por línea. El ítem del bloque de abstención mide precisamente que el
+sistema elija esa columna y ese grano, no que aplique el sinónimo de D-12.
+
+**Alternativa descartada.** Sustituir por `SUM(importe_articulos)`. Haría
+de la 62 otra pregunta de facturación canónica y anularía el enunciado.
 
 ---
 
