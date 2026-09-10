@@ -1,4 +1,4 @@
-"""Interfaz de línea de comandos (Hito 1: sin Streamlit)."""
+"""Interfaz de línea de comandos."""
 
 from __future__ import annotations
 

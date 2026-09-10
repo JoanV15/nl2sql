@@ -32,6 +32,7 @@ class ResultadoConsulta:
     columnas: list[str] = field(default_factory=list)
     filas: list[tuple] = field(default_factory=list)
     abstencion: str | None = None
+    supuestos: list[str] = field(default_factory=list)
     error: str | None = None
     id_traza: int | None = None
     prompt_n: int | None = None
@@ -52,6 +53,16 @@ def extraer_salida(texto: str) -> tuple[str | None, str | None]:
     if ";" in t:
         t = t.split(";", 1)[0].strip()
     return (t or None), None
+
+
+def supuestos_de(sql: str | None) -> list[str]:
+    if not sql:
+        return []
+    return [
+        ln.lstrip()[2:].strip()
+        for ln in sql.splitlines()
+        if ln.lstrip().startswith("--")
+    ]
 
 
 def validar_para_ejecutar(sql: str, columnas: dict[str, frozenset[str]], con) -> str:
@@ -80,6 +91,7 @@ def consultar(
     gen = completar(prompt)
     primera = gen
     sql_crudo, abstencion = extraer_salida(gen.texto)
+    supuestos = supuestos_de(sql_crudo)
     reintentos: list[dict] = []
     veredicto = "pendiente"
     sql_final: str | None = None
@@ -101,6 +113,8 @@ def consultar(
                 )
                 if gen_corr is not None:
                     gen = gen_corr
+                    sql_corr, _ = extraer_salida(gen_corr.texto)
+                    supuestos = supuestos_de(sql_corr)
                 if sql_final is not None:
                     columnas_out, filas = ejecutar(con, sql_final)
                     veredicto = "aceptado"
@@ -142,6 +156,7 @@ def consultar(
         columnas=columnas_out,
         filas=filas,
         abstencion=abstencion,
+        supuestos=supuestos,
         error=error,
         id_traza=id_traza,
         prompt_n=primera.prompt_n,

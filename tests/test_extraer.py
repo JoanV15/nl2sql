@@ -1,4 +1,4 @@
-from tfm_nlsql.runtime.orquestador import extraer_salida
+from tfm_nlsql.runtime.orquestador import extraer_salida, supuestos_de
 
 _RUIDO = """```
 SELECT COUNT(id_pedido) AS total_pedidos
@@ -46,3 +46,9 @@ def test_cerca_sin_cierre_no_arranca_por_fence() -> None:
     assert sql is not None
     assert not sql.startswith("```")
     assert sql.startswith("WITH")
+
+
+def test_supuestos_de_comentario_inicial() -> None:
+    sql = "-- supuesto: electronica = macro\nSELECT 1"
+    assert supuestos_de(sql) == ["supuesto: electronica = macro"]
+    assert supuestos_de(None) == []
