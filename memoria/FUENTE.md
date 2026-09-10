@@ -231,3 +231,16 @@ Streamlit. No amplíes la lista blanca del validador a `obt_embudo_web`.
 
 **Registro.** El triaje del paso 1 se registra como decisión de alcance
 del Hito 2. Commit y push a `origin/v1`.
+
+---
+
+## Hito 2 cerrado (2026-09-10)
+
+Precisión 7B (`evaluacion/resultados/hito2_7b.json`, SHA `886a379` /
+`d37c143`): Nivel 2 **5/16**, Nivel 3 **1/11**, abstención **5/8**. 57 y
+58 se abstienen. 63: el modelo se abstiene (bloque 6); el validador
+rechaza el DELETE de referencia. 62: grano correcto (`SUM(importe_total)`
+en `obt_pedidos`); D-50 falla porque el generado omite `es_venta_valida`.
+D-35 (`n_predict` 120) trunca las WITH de 27, 36, 40 y 41. Streamlit
+existe: `uv run tfm-nlsql-ui`. P-09 resuelta → D-54. Los KO no son
+trabajo pendiente.

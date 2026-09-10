@@ -1785,7 +1785,7 @@ cambia de veredicto, en los dos sentidos.
 | P-06 | Política de retención en Delta                                                                     | **Resuelta** → D-31                                    |
 | P-07 | Medición de latencia de prefill con y sin caché de prefijo, para dimensionar el contrato semántico | **Resuelta** — 2026-09-01 (sintético) y 2026-09-07 (prefijo real); ver anexo |
 | P-08 | Base documental como quinto origen de datos                                                        | **Resuelta** → D-32. Se incorpora                      |
-| P-09 | Triaje de alcance del Hito 2 (preguntas 19–55 y abstención)                                        | **Pendiente** — primer paso del Hito 2                 |
+| P-09 | Triaje de alcance del Hito 2 (preguntas 19–55 y abstención)                                        | **Resuelta** → D-54                                    |
 | P-10 | El 7B como modelo del sistema tras la ablación                                                     | **Resuelta** → D-53                                    |
 
 ---

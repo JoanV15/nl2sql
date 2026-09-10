@@ -4,7 +4,7 @@ Si abres un chat nuevo, pega el bloque **Prompt de arranque**. El chat de
 arquitectura se cortó por crédito (1 USD / 25, renovación 7 oct 2026). Este
 fichero sustituye esa conversación.
 
-Hoy: **9 de septiembre de 2026**. Entrega: **17 de septiembre**.
+Hoy: **10 de septiembre de 2026**. Entrega: **17 de septiembre**.
 
 Hay **dos agentes**. No los mezcles.
 
@@ -44,14 +44,14 @@ HANDOFF.md, ROADMAP.md, memoria/FUENTE.md, memoria/PLANTILLA.md,
 AGENTS.md. DECISIONES.md bajo demanda (D-47–D-53 y C-08–C-11 están
 calientes). CONTRATO_SEMANTICO.md solo si hay que tocar semántica.
 
-Estado a 2026-09-09:
-- Rama v1. Hito 1 cerrado. Validador 18/18. Precisión Nivel 1: 7/18
-  (3B) vs 13/18 (7B). Sin regresiones 3B→7B. Modelo de sistema: 7B
-  (D-53). Contrato 1.1, 3.067 fichas. Prefijo [PREFIJO] intocable sin
-  permiso de Joan.
-- Siguiente trabajo: Hito 2, primera mitad (triaje preguntas 19–55 +
-  SQL de referencia). Streamlit después. No evaluar con el LLM hasta
-  que Joan haya visto las referencias.
+Estado a 2026-09-10:
+- Rama v1. Hito 1 cerrado. Hito 2 cerrado. Validador 18/18. Precisión
+  Nivel 1: 7/18 (3B) vs 13/18 (7B). Hito 2 (7B): N2 5/16, N3 1/11,
+  abstención 5/8. Modelo de sistema: 7B (D-53). Contrato 1.1, 3.067
+  fichas. Prefijo [PREFIJO] intocable sin permiso de Joan. Streamlit:
+  `uv run tfm-nlsql-ui`.
+- Siguiente trabajo: Hito 3 (lakehouse real: Landing, Spark Bronze→Silver,
+  Delta). No reabrir el Hito 2.
 - Crédito del chat de arquitectura anterior agotado. Sé denso. Sin
   preámbulos. Español. Una decisión por mensaje cuando haga falta.
 
@@ -69,9 +69,7 @@ Reglas:
 - Joan pega el encargo él. Tú no asumas que el otro agente te oye.
 
 Primera acción: confirma en 10 líneas que has leído el estado y que el
-siguiente movimiento es que Joan envíe el Hito 2 (primera mitad) al
-agente de código, y espera su informe de triaje. No reescribas el
-encargo del Hito 2 a menos que Joan lo pida.
+siguiente movimiento es el Hito 3. No reabras el Hito 2.
 ```
 
 ---
@@ -97,40 +95,23 @@ Reglas que no se negocian:
 - Reporta regresiones, no solo el saldo neto (C-11).
 - Execution accuracy = igualdad exacta de conjuntos (D-50). No la relajes.
 
-Estado: Hito 1 cerrado. Nivel 1 = 13/18 con 7B, 7/18 con 3B. Validador
-18/18. Contrato 1.1, 3.067 fichas. Siguiente: Hito 2 primera mitad
-(triaje + SQL de referencia). Streamlit va DESPUÉS, cuando Joan lo pida.
+Estado: Hito 1 cerrado. Hito 2 cerrado. Nivel 1 = 13/18 con 7B, 7/18
+con 3B. Hito 2 (7B): N2 5/16, N3 1/11, abstención 5/8. Validador 18/18.
+Contrato 1.1, 3.067 fichas. Streamlit: `uv run tfm-nlsql-ui`. Siguiente:
+Hito 3 (Landing, Spark, Delta). No reabras el Hito 2.
 
-Primera tarea: el encargo «Hito 2, primera mitad» que está al final de
-memoria/FUENTE.md y repetido abajo. No adelantes el resto.
+Primera tarea: el Hito 3 de ROADMAP.md, cuando Joan pegue el encargo.
+No adelantes Kafka, MongoDB ni Streamlit.
 ```
 
 ---
 
-## Encargo activo — Hito 2, primera mitad
+## Encargo activo — Hito 3
 
-Objetivo: alcance y referencias de niveles 2 y 3. Modelo 7B. Commit `259b62f`
-o posterior.
-
-**Paso 1. Triaje.** Preguntas 19–55 de `Preguntas.md` en tres grupos:
-(a) respondibles hoy con `obt_pedidos`, `obt_lineas_pedido`, `obt_vendedores`;
-(b) necesitan `obt_embudo_web` u orígenes del Hito 4;
-(c) no respondibles → abstención. Una línea de motivo por pregunta.
-Dame el reparto **antes** de escribir SQL.
-
-**Paso 2.** SQL de referencia solo del grupo (a) y de las preguntas 56–63
-(abstención). Ancla en bloques 3 y 4 del contrato. Si falta una definición,
-no la inventes: anótala.
-
-**Paso 3.** Ejecuta cada referencia. Entrega número + una frase de qué mide.
-Cuidado con el grano y el alias (la 16 mintió llamando reseñas a pedidos).
-
-**Paso 4. Para.** No evalúes con el LLM. Joan revisa las referencias.
-
-Límites: no contrato, no Nivel 1, no Streamlit, no lista blanca
-`obt_embudo_web`.
-
-Registro: triaje como decisión de alcance del Hito 2. Commit + push.
+Hito 2 cerrado el 2026-09-10. El siguiente trabajo es el Hito 3 de
+`ROADMAP.md` (lakehouse real: Landing con cuarentena, Spark Bronze→Silver,
+Silver en Delta). Joan pega el encargo. No reabrir N2/N3/abstención ni
+Streamlit.
 
 ---
 
@@ -166,5 +147,5 @@ Escribe en memoria/borrador/ las secciones. No toques código ni el contrato.
 - `memoria/README.md` — cómo corre el redactor.
 - `HANDOFF.md` — este fichero.
 - `DECISIONES.md` — D-53, C-08…C-11, R-08, R-09, P-09, P-10.
-- `ROADMAP.md` — Hito 1 marcado cerrado.
+- `ROADMAP.md` — Hito 1 y Hito 2 marcados cerrados.
 - `.gitignore` — versiona `nivel1_3b.json` y `nivel1_7b.json`.

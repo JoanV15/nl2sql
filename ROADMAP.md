@@ -45,7 +45,7 @@ reconciliación de D-14 pasa y que no está trucado.
 
 ---
 
-## Hito 2 · Cobertura completa de preguntas e interfaz
+## Hito 2 · Cobertura completa de preguntas e interfaz *(cerrado 2026-09-10)*
 
 **Objetivo.** Cubrir los 46 casos que dependen solo de dato real, más el bloque
 de abstención.
@@ -56,6 +56,11 @@ mostrando fecha de referencia, SQL generado y supuestos declarados.
 
 **Criterio de hecho.** Precisión desglosada por nivel, nunca agregada. Las
 preguntas 57 y 58 se abstienen; la 63 la rechaza el validador, no el modelo.
+
+**Cierre.** Precisión 7B: Nivel 2 **5/16**, Nivel 3 **1/11**, abstención
+**5/8**. Streamlit: `uv run tfm-nlsql-ui`. Commits: `75875af`, `beee57d`,
+`886a379`, `d37c143`, `965971b`. La 63: el modelo se abstiene (bloque 6); el
+validador rechaza el DELETE de referencia. Los KO no son trabajo pendiente.
 
 **Tu revisión.** Aquí es donde el trabajo se gana o se pierde. Comprueba que la
 abstención no es el modelo diciendo "no sé", sino la política del bloque 6 del
