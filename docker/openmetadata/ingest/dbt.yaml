@@ -1,0 +1,22 @@
+# Receta de linaje Silver → Gold (D-62). No alimenta el prompt (D-06, D-33).
+source:
+  type: dbt
+  serviceName: tfm_nlsql_gold
+  sourceConfig:
+    config:
+      type: DBT
+      dbtConfigSource:
+        dbtConfigType: local
+        dbtManifestFilePath: /dbt/manifest.json
+        dbtCatalogFilePath: /dbt/catalog.json
+      dbtUpdateDescriptions: true
+sink:
+  type: metadata-rest
+  config: {}
+workflowConfig:
+  loggerLevel: INFO
+  openMetadataServerConfig:
+    hostPort: http://openmetadata-server:8585/api
+    authProvider: openmetadata
+    securityConfig:
+      jwtToken: ${OM_JWT}

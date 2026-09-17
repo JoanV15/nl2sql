@@ -1,0 +1,21 @@
+# Perfiles mutuamente excluyentes (D-62, C-03, R-08).
+#   docker compose --profile consulta up --build
+#   docker compose -f docker/openmetadata/docker-compose.yml up -d
+#
+# Nunca consulta + catálogo + 7B a la vez.
+
+services:
+  ui:
+    profiles: ["consulta"]
+    build:
+      context: .
+      dockerfile: docker/consulta/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      TFM_GOLD_PATH: /datos/gold/gold.duckdb
+      TFM_LLAMA_URL: ${TFM_LLAMA_URL:-http://host.docker.internal:8080}
+    volumes:
+      - ./datos/gold:/datos/gold:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

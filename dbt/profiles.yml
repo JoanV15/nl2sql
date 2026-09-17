@@ -1,0 +1,15 @@
+tfm_nlsql:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('TFM_GOLD_PATH', '../datos/gold/gold.duckdb') }}"
+      threads: 4
+      extensions:
+        - delta
+      settings:
+        memory_limit: 1GB
+    ci:
+      type: duckdb
+      path: "{{ env_var('TFM_GOLD_PATH', '../datos/gold/ci.duckdb') }}"
+      threads: 2

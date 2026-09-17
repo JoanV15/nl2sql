@@ -1,0 +1,10 @@
+# Configuración de la interfaz (D-39). Sin telemetría: D-18, soberanía del dato.
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#0B5FA5"

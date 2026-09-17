@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: obt_pedidos
+    description: Grano pedido (id_pedido).
+    columns:
+      - name: id_pedido
+        tests:
+          - unique
+          - not_null
+      - name: id_cliente_persona
+        description: Identifica a la persona; usar este para contar clientes.
+      - name: id_cliente_pedido
+        description: Identificador por pedido; NO sirve para contar clientes.
+      - name: estado_cliente
+        description: "UF brasileña de dos letras: SP, RJ, MG."
+      - name: estado_pedido
+        description: delivered, shipped, canceled, unavailable, invoiced, processing, created, approved.
+      - name: fecha_compra
+        description: Incluye la hora del día.
+      - name: fecha_entrega_cliente
+        description: NULL si el pedido no se entregó.
+      - name: fecha_entrega_estimada
+        description: Compromiso dado al cliente en la compra.
+      - name: importe_articulos
+        description: Facturación y GMV del pedido, sin portes.
+      - name: importe_flete
+        description: Portes cobrados al cliente.
+      - name: importe_total
+        description: importe_articulos + importe_flete.
+      - name: importe_pagado
+        description: Caja cobrada; incluye recargos de financiación y vales.
+      - name: importe_articulos_eur
+        description: importe_articulos a tipo fijo de referencia.
+      - name: tipo_pago_principal
+        description: credit_card, boleto, voucher, debit_card.
+      - name: num_plazos
+        description: 1 significa pago único.
+      - name: num_articulos
+        description: Número de líneas del pedido.
+      - name: nota_resena
+        description: De 1 a 5; media si hay varias reseñas; NULL si no tiene.
+      - name: dias_entrega
+        description: Desde fecha_compra hasta fecha_entrega_cliente.
+      - name: dias_desviacion_entrega
+        description: Entrega real menos estimada; negativo es adelanto.
+      - name: fecha_primera_compra_cliente
+        description: Primera compra de id_cliente_persona.
+      - name: num_pedido_cliente
+        description: 1 es el primer pedido de esa persona.
+      - name: meses_desde_primera_compra
+        description: 0 en el primer pedido.
+      - name: es_venta_valida
+        description: Excluye canceled y unavailable; atajo, no filtro obligatorio.
+      - name: fue_entregado_a_tiempo
+        description: NULL si el pedido no se entregó.
+      - name: tiene_resena_negativa
+        description: nota_resena menor o igual que 2.
+      - name: es_cliente_recurrente
+        description: La persona acumula más de un pedido.
+      - name: fue_pagado_a_plazos
+        description: num_plazos mayor que 1.
+      - name: id_transportista
+        description: Procede de la fuente simulada de eventos logísticos.
+      - name: tipo_incidencia
+        description: NULL, extraviado o dañado.
+  - name: obt_lineas_pedido
+    description: Grano línea (id_pedido + num_linea).
+    columns:
+      - name: id_pedido
+        tests:
+          - not_null
+      - name: num_linea
+        description: 1, 2, 3... dentro del pedido.
+        tests:
+          - not_null
+      - name: id_producto
+        description: Identificador opaco; los productos no tienen nombre.
+      - name: categoria_producto
+        description: "Categoría original en portugués: eletronicos, pcs, informatica_acessorios."
+      - name: macro_categoria
+        description: Agrupación de negocio; ver reglas en el contrato semántico.
+      - name: importe_articulos
+        description: Precio de esta línea, sin portes.
+      - name: importe_flete
+        description: Portes imputados a esta línea.
+      - name: estado_vendedor
+        description: UF del vendedor de esta línea.
+      - name: fecha_limite_expedicion
+        description: Plazo comprometido por el vendedor, propio de la línea.
+      - name: dias_desviacion_expedicion
+        description: Envío real menos fecha_limite_expedicion; negativo es adelanto.
+      - name: fecha_compra
+        description: Del pedido; repetido en cada línea.
+      - name: fecha_envio_transportista
+        description: Del pedido; repetido en cada línea.
+      - name: estado_pedido
+        description: Del pedido; repetido en cada línea.
+      - name: dias_entrega
+        description: Del pedido; repetido en cada línea, NO promediar aquí.
+      - name: nota_resena
+        description: Del pedido; repetido en cada línea, NO promediar aquí.
+      - name: es_venta_valida
+        description: Excluye canceled y unavailable; atajo, no filtro obligatorio.
+      - name: tiene_resena_negativa
+        description: Del pedido; repetido en cada línea.
+  - name: obt_vendedores
+    description: Grano vendedor, censo completo (D-44).
+    columns:
+      - name: id_vendedor
+        tests:
+          - unique
+          - not_null
+      - name: estado_vendedor
+        description: UF brasileña de dos letras.
+      - name: fecha_captacion
+        description: Alta como lead; NULL si no consta en captación.
+      - name: canal_captacion
+        description: organic_search, paid_search, social, direct_traffic.
+      - name: segmento_negocio
+        description: Sector declarado por el vendedor al darse de alta.
+      - name: fecha_primera_venta
+        description: NULL si nunca vendió.
+      - name: dias_hasta_primera_venta
+        description: De fecha_captacion a fecha_primera_venta.
+      - name: num_pedidos
+        description: Pedidos distintos servidos.
+      - name: num_articulos_vendidos
+        description: Líneas servidas.
+      - name: importe_articulos
+        description: Facturación acumulada, sin portes.
+      - name: nota_resena_media
+        description: De 1 a 5; NULL si no tiene reseñas.
+      - name: pct_resenas_negativas
+        description: Proporción de 0 a 1.
+      - name: dias_entrega_medio
+        description: Media de dias_entrega de sus pedidos.
+      - name: pct_pedidos_con_retraso
+        description: Proporción de 0 a 1.
+  - name: obt_embudo_web
+    description: Grano día × producto (fecha + id_producto). Clickstream simulado.
+    columns:
+      - name: categoria_producto
+        description: Categoría original en portugués.
+      - name: num_visitas
+        description: Visitas a la ficha de producto.
+      - name: num_carritos_abandonados
+        description: Añadidos al carrito sin compra posterior.
+      - name: num_compras
+        description: Compras atribuidas a esa fecha y producto.
+      - name: pct_conversion
+        description: num_compras / num_visitas; NULL si no hubo visitas.

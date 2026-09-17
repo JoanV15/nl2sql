@@ -1,0 +1,154 @@
+{
+  "bloques": {
+    "logistica": {
+      "ids": [
+        47,
+        48
+      ],
+      "total": 2,
+      "aciertos": 0
+    },
+    "embudo": {
+      "ids": [
+        50,
+        51
+      ],
+      "total": 2,
+      "aciertos": 1
+    },
+    "fuentes": {
+      "ids": [
+        53,
+        54,
+        55
+      ],
+      "total": 3,
+      "aciertos": 2
+    }
+  },
+  "modo": "execution_accuracy",
+  "detalle": [
+    {
+      "n": 47,
+      "pregunta": "¿Qué transportista acumula más entregas con retraso?",
+      "sql_referencia": "SELECT id_transportista, COUNT(*) AS num_retrasos FROM obt_pedidos WHERE dias_desviacion_entrega > 0 AND NOT id_transportista IS NULL GROUP BY id_transportista ORDER BY num_retrasos DESC LIMIT 1",
+      "acierto": false,
+      "sql_generado": "SELECT id_transportista, COUNT(*) AS num_retrasos FROM obt_pedidos WHERE dias_desviacion_entrega > 0 GROUP BY id_transportista ORDER BY num_retrasos DESC LIMIT 1",
+      "abstencion": null,
+      "error": null,
+      "es_venta_valida_espurio": false,
+      "prompt_n": 19,
+      "prompt_ms": 1272.785,
+      "predicted_n": 53,
+      "predicted_ms": 12246.746,
+      "motivo": "conjuntos distintos",
+      "n_generado": 1,
+      "n_referencia": 1
+    },
+    {
+      "n": 48,
+      "pregunta": "¿Cuántos pedidos se extraviaron o dañaron y cuánto valor representan, por trimestre y transportista?",
+      "sql_referencia": "SELECT DATE_TRUNC('QUARTER', fecha_compra) AS trimestre, id_transportista, COUNT(*) AS num_pedidos, SUM(importe_articulos) AS valor FROM obt_pedidos WHERE tipo_incidencia IN ('extraviado', 'dañado') GROUP BY 1, 2 ORDER BY 1, 2 LIMIT 1000",
+      "acierto": false,
+      "sql_generado": null,
+      "abstencion": null,
+      "error": "binding: Binder Error: Referenced column \"fecha_entrega_cliente\" not found in FROM clause!\nCandidate bindings: \"id_transportista\"\n\nLINE 1: ..., num_dañados, valor_extraviados, valor_dañados, QUARTER(fecha_entrega_cliente) AS trimestre, YEAR(fecha_entrega_cli...\n                                                                    ^",
+      "es_venta_valida_espurio": false,
+      "prompt_n": 33,
+      "prompt_ms": 2160.237,
+      "predicted_n": 237,
+      "predicted_ms": 52617.605,
+      "motivo": "binding: Binder Error: Referenced column \"fecha_entrega_cliente\" not found in FROM clause!\nCandidate bindings: \"id_transportista\"\n\nLINE 1: ..., num_dañados, valor_extraviados, valor_dañados, QUARTER(fecha_entrega_cliente) AS trimestre, YEAR(fecha_entrega_cli...\n                                                                    ^"
+    },
+    {
+      "n": 50,
+      "pregunta": "¿Qué categorías acumulan más carritos abandonados?",
+      "sql_referencia": "SELECT categoria_producto, SUM(num_carritos_abandonados) AS num_carritos_abandonados FROM obt_embudo_web GROUP BY categoria_producto ORDER BY num_carritos_abandonados DESC, categoria_producto LIMIT 1000",
+      "acierto": true,
+      "sql_generado": "SELECT categoria_producto, SUM(num_carritos_abandonados) AS total_carritos_abandonados FROM obt_embudo_web GROUP BY categoria_producto ORDER BY total_carritos_abandonados DESC LIMIT 1000",
+      "abstencion": null,
+      "error": null,
+      "es_venta_valida_espurio": false,
+      "prompt_n": 16,
+      "prompt_ms": 1044.801,
+      "predicted_n": 47,
+      "predicted_ms": 10061.558
+    },
+    {
+      "n": 51,
+      "pregunta": "¿Cuál es la tasa de conversión de visita a compra por categoría?",
+      "sql_referencia": "SELECT categoria_producto, SUM(num_compras) * 1.0 / NULLIF(SUM(num_visitas), 0) AS tasa_conversion FROM obt_embudo_web GROUP BY categoria_producto ORDER BY tasa_conversion DESC, categoria_producto LIMIT 1000",
+      "acierto": false,
+      "sql_generado": "WITH conversiones AS (SELECT categoria_producto, SUM(num_compras) AS num_compras, SUM(num_visitas) AS num_visitas FROM obt_embudo_web GROUP BY categoria_producto) SELECT categoria_producto, num_compras, num_visitas, num_compras / NULLIF(num_visitas, 0) AS tasa_conversion FROM conversiones ORDER BY tasa_conversion DESC LIMIT 1000",
+      "abstencion": null,
+      "error": null,
+      "es_venta_valida_espurio": false,
+      "prompt_n": 21,
+      "prompt_ms": 1462.261,
+      "predicted_n": 95,
+      "predicted_ms": 20771.218,
+      "motivo": "conjuntos distintos",
+      "n_generado": 66,
+      "n_referencia": 66
+    },
+    {
+      "n": 53,
+      "pregunta": "¿Cuánto tarda un vendedor nuevo desde que lo captamos hasta su primera venta?",
+      "sql_referencia": "SELECT AVG(dias_hasta_primera_venta) AS dias_medio FROM obt_vendedores WHERE NOT fecha_captacion IS NULL AND NOT fecha_primera_venta IS NULL LIMIT 1000",
+      "acierto": true,
+      "sql_generado": "SELECT AVG(dias_hasta_primera_venta) AS promedio_dias_hasta_primera_venta FROM obt_vendedores WHERE NOT fecha_primera_venta IS NULL LIMIT 1000",
+      "abstencion": null,
+      "error": null,
+      "es_venta_valida_espurio": false,
+      "prompt_n": 23,
+      "prompt_ms": 1596.566,
+      "predicted_n": 41,
+      "predicted_ms": 8607.08
+    },
+    {
+      "n": 54,
+      "pregunta": "¿Qué canal de captación nos trae los vendedores que más facturan?",
+      "sql_referencia": "SELECT canal_captacion, SUM(importe_articulos) AS facturacion FROM obt_vendedores WHERE NOT canal_captacion IS NULL GROUP BY canal_captacion ORDER BY facturacion DESC, canal_captacion LIMIT 1000",
+      "acierto": false,
+      "sql_generado": "SELECT canal_captacion, SUM(importe_articulos) AS facturacion, RANK() OVER (ORDER BY SUM(importe_articulos) DESC) AS puesto FROM obt_vendedores GROUP BY canal_captacion ORDER BY facturacion DESC LIMIT 1",
+      "abstencion": null,
+      "error": null,
+      "es_venta_valida_espurio": false,
+      "prompt_n": 22,
+      "prompt_ms": 1492.7,
+      "predicted_n": 64,
+      "predicted_ms": 14446.317,
+      "motivo": "conjuntos distintos",
+      "n_generado": 1,
+      "n_referencia": 9
+    },
+    {
+      "n": 55,
+      "pregunta": "¿Cuánto facturamos el año pasado en euros?",
+      "sql_referencia": "SELECT SUM(importe_articulos_eur) AS facturacion_eur FROM obt_pedidos WHERE es_venta_valida AND YEAR(fecha_compra) = 2017 LIMIT 1000",
+      "acierto": true,
+      "sql_generado": "SELECT SUM(importe_articulos_eur) AS facturacion_eur FROM obt_pedidos WHERE es_venta_valida AND YEAR(fecha_compra) = 2017 LIMIT 1000",
+      "abstencion": null,
+      "error": null,
+      "es_venta_valida_espurio": false,
+      "prompt_n": 17,
+      "prompt_ms": 1164.72,
+      "predicted_n": 44,
+      "predicted_ms": 9288.553
+    }
+  ],
+  "metadatos": {
+    "modelo": "Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf",
+    "cuantizacion": "Q4_K - Medium",
+    "n_ctx": 4096,
+    "hilos": 6,
+    "n_predict": 256,
+    "max_intentos": 2,
+    "version_contrato": "1.1",
+    "fecha": "2026-09-16T20:35:57.602678+00:00",
+    "prefill_tok_s_medio": 14.802761882929232,
+    "generacion_tok_s_medio": 4.572497979159997,
+    "latencia_ms_media": 19747.592428571428,
+    "es_venta_valida_espurio": 0
+  }
+}

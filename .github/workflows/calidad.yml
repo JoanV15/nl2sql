@@ -1,0 +1,27 @@
+name: calidad
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencias (sin Spark, sin Dagster)
+        run: uv sync --extra dev --frozen
+      - name: Ruff
+        run: uv run ruff check src tests evaluacion
+      - name: Pytest sin Spark
+        run: uv run pytest tests/ -m "not spark" -q
+      - name: dbt build sobre muestra
+        env:
+          TFM_GOLD_PATH: ${{ runner.temp }}/gold.duckdb
+        run: uv run python -m tfm_nlsql.plataforma.muestra

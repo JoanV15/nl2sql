@@ -1,0 +1,71 @@
+[project]
+name = "tfm-nlsql"
+version = "0.1.0"
+description = "NL-to-SQL sobre un Lakehouse gobernado — TFM"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.2",
+    "sqlglot>=26",
+    "dbt-duckdb>=1.9",
+    "streamlit>=1.40",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.9",
+]
+landing = [
+    "kagglehub>=0.3",
+]
+spark = [
+    "pyspark>=4.0",
+    "delta-spark>=4.4",
+]
+mongo = [
+    "pymongo>=4",
+]
+dagster = [
+    "dagster>=1.9",
+]
+azure = [
+    "azure-identity>=1.15",
+    "azure-storage-file-datalake>=12",
+]
+
+[project.scripts]
+tfm-nlsql = "tfm_nlsql.interfaz.cli:main"
+tfm-nlsql-ui = "tfm_nlsql.interfaz.app:main"
+tfm-nlsql-gold = "tfm_nlsql.ingesta.construir_gold:main"
+tfm-nlsql-aterrizar = "tfm_nlsql.ingesta.aterrizar:main"
+tfm-nlsql-bronze = "tfm_nlsql.plataforma.bronze:main"
+tfm-nlsql-silver = "tfm_nlsql.plataforma.silver:main"
+tfm-nlsql-kafka = "tfm_nlsql.ingesta.kafka_local:main"
+tfm-nlsql-logistica = "tfm_nlsql.ingesta.eventos_logisticos:main"
+tfm-nlsql-clickstream = "tfm_nlsql.ingesta.clickstream:main"
+tfm-nlsql-captacion-fx = "tfm_nlsql.ingesta.captacion_fx:main"
+tfm-nlsql-mongo = "tfm_nlsql.ingesta.mongo_local:main"
+tfm-nlsql-resenas = "tfm_nlsql.ingesta.resenas_mongo:main"
+tfm-nlsql-plataforma = "tfm_nlsql.plataforma.defs:main"
+tfm-nlsql-om = "tfm_nlsql.plataforma.om_ingest:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src", "tests", "evaluacion"]
+extend-exclude = ["docker"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "spark: requiere pyspark (no en CI, D-25)",
+]
