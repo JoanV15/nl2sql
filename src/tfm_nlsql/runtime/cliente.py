@@ -38,6 +38,10 @@ def _leer(req: Request, timeout: float) -> dict:
     except HTTPError as e:
         detalle = e.read().decode("utf-8", errors="replace")
         raise ErrorLLM(f"llama-server {e.code}: {detalle}") from e
+    except TimeoutError as e:
+        raise ErrorLLM(
+            f"llama-server no responde en {LLAMA_URL}: timeout {timeout:.0f}s"
+        ) from e
     except URLError as e:
         raise ErrorLLM(f"llama-server no responde en {LLAMA_URL}: {e.reason}") from e
 
@@ -58,7 +62,11 @@ def _post(ruta: str, cuerpo: dict, timeout: float) -> dict:
 
 
 def completar(
-    prompt: str, *, n_predict: int = N_PREDICT, cache_prompt: bool = True
+    prompt: str,
+    *,
+    n_predict: int = N_PREDICT,
+    cache_prompt: bool = True,
+    timeout: float = 180,
 ) -> RespuestaLLM:
     raw = _post(
         "/completion",
@@ -69,7 +77,7 @@ def completar(
             "cache_prompt": cache_prompt,
             "stop": PARADA,
         },
-        timeout=180,
+        timeout=timeout,
     )
     timings = raw.get("timings") or {}
     return RespuestaLLM(
@@ -91,8 +99,12 @@ def llama_escucha(timeout: float = 0.3) -> bool:
 
 
 def calentar(prompt: str) -> None:
-    """P-07 / D-34: paga el prefill en frío antes de aceptar preguntas."""
-    completar(prompt, n_predict=1)
+    """P-07 / D-34: paga el prefill en frío antes de aceptar preguntas.
+
+    El 7B en CPU procesa el contrato a ~13 fichas/s: 3.300 fichas van más
+    de tres minutos. 180 s cortaba el socket a mitad de prefill.
+    """
+    completar(prompt, n_predict=1, timeout=360)
 
 
 def contar_fichas(texto: str) -> int:

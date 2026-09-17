@@ -9,7 +9,13 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from tfm_nlsql.runtime.cliente import RespuestaLLM, calentar, completar, llama_escucha
+from tfm_nlsql.runtime.cliente import (
+    ErrorLLM,
+    RespuestaLLM,
+    calentar,
+    completar,
+    llama_escucha,
+)
 from tfm_nlsql.runtime.contrato import cargar_contrato
 from tfm_nlsql.runtime.ejecutor import conexion_lectura, ejecutar, validar_binding
 from tfm_nlsql.runtime.prompt import construir_prompt
@@ -148,7 +154,10 @@ def precalentar() -> bool:
         return True
     if not llama_escucha():
         return False
-    calentar(construir_prompt("calentamiento"))
+    try:
+        calentar(construir_prompt("calentamiento"))
+    except ErrorLLM:
+        return False
     _calentado = True
     return True
 

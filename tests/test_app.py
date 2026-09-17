@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
 from tfm_nlsql.interfaz.app import (
@@ -13,6 +14,14 @@ from tfm_nlsql.interfaz.app import (
 from tfm_nlsql.interfaz.cli import mensaje_error
 
 APP = Path(__file__).resolve().parents[1] / "src" / "tfm_nlsql" / "interfaz" / "app.py"
+
+
+@pytest.fixture(autouse=True)
+def _sin_prefill_real(monkeypatch) -> None:
+    """pagina() llama a precalentar(); con el 7B en marcha AppTest espera 3 s."""
+    from tfm_nlsql.runtime import orquestador
+
+    monkeypatch.setattr(orquestador, "llama_escucha", lambda: False)
 
 
 def _preguntar(at: AppTest) -> AppTest:

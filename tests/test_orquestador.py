@@ -9,6 +9,7 @@ import pytest
 
 from tfm_nlsql.runtime import orquestador
 from tfm_nlsql.runtime.cliente import RespuestaLLM
+from tfm_nlsql.runtime.cliente import ErrorLLM
 from tfm_nlsql.runtime.orquestador import (
     ETAPA_AST,
     ETAPA_CALENTAMIENTO,
@@ -17,6 +18,7 @@ from tfm_nlsql.runtime.orquestador import (
     ETAPA_GENERACION,
     ETAPA_REINTENTO,
     consultar,
+    precalentar,
     reservar_modelo,
 )
 
@@ -130,3 +132,16 @@ def test_reservar_modelo_no_encola_una_segunda_consulta() -> None:
             assert segunda is False
     with reservar_modelo() as tercera:
         assert tercera is True
+
+
+def test_precalentar_devuelve_falso_si_el_prefill_expira(monkeypatch) -> None:
+    """La UI captura False; no debe pintar un traceback de socket."""
+    monkeypatch.setattr(orquestador, "_calentado", False)
+    monkeypatch.setattr(orquestador, "llama_escucha", lambda: True)
+    monkeypatch.setattr(
+        orquestador,
+        "calentar",
+        lambda prompt: (_ for _ in ()).throw(ErrorLLM("timeout 180s")),
+    )
+    assert precalentar() is False
+    assert orquestador._calentado is False
